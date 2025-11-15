@@ -21,6 +21,14 @@
 - Q: What is the specific tiered bonus structure for platform admin compensation? → A: Scaled tiers: 1-10 orgs=$30 each, 11-25=$50 each, 26+=$75 each (monthly)
 - Q: How is the initial super admin account securely created during system setup? → A: Database seeding script with hardcoded initial super admin during setup
 - Q: What are the OTP retry limits and rate limiting rules to prevent SMS abuse? → A: 5 OTP requests per phone number per 15 minutes, 3 verification attempts per OTP
+- Q: Backend API format? → A: REST API
+- Q: Organization name case sensitivity? → A: Case-insensitive uniqueness (e.g., "ABC Corp" = "abc corp")
+- Q: Workspace switcher component? → A: Simple shadcn dropdown menu
+- Q: Landing page content? → A: Skip testimonials and pricing for now (Hero, Features, CTA, Footer only)
+- Q: Profile photo upload mechanism? → A: Direct backend upload (FormData to API)
+- Q: Session storage approach? → A: Hybrid (httpOnly cookie for auth token + TanStack Query cache for user data)
+- Q: Email verification enforcement? → A: Optional - only required for password reset
+- Q: Maximum organizations per user? → A: No hard limit, build for 2-10, monitor and adjust
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -37,7 +45,7 @@ Visitors can access a professional landing page showcasing the property portal p
 1. **Given** a visitor arrives at the platform URL, **When** they view the landing page, **Then** they see a professional hero section with value proposition, feature highlights, and clear CTA buttons
 2. **Given** a visitor is on the landing page, **When** they click "Get Started" or "Sign Up", **Then** they are directed to the registration page
 3. **Given** a visitor is on the landing page, **When** they click "Sign In", **Then** they are directed to the login page
-4. **Given** a visitor scrolls through the landing page, **When** they view different sections, **Then** they see features, benefits, testimonials (placeholders), and pricing information (if applicable)
+4. **Given** a visitor scrolls through the landing page, **When** they view different sections, **Then** they see hero section, features section, secondary CTA section, and footer (testimonials and pricing skipped for MVP)
 5. **Given** a visitor is on mobile device, **When** they view the landing page, **Then** all content is responsive and properly formatted for mobile viewing
 
 ---
@@ -78,7 +86,7 @@ Users can access their dashboard after authentication and create organizations (
 2. **Given** a user clicks "Create Organization", **When** they enter organization details, **Then** they can create a new organization with a unique name and description
 3. **Given** a user creates an organization, **When** the organization is created, **Then** they are automatically assigned as the organization owner and redirected to the organization dashboard
 4. **Given** an organization owner, **When** they access organization settings, **Then** they can update organization name, description, and other basic settings using shadcn form components
-5. **Given** a user belongs to multiple organizations, **When** they are in the dashboard, **Then** they see a workspace switcher (shadcn dropdown or command menu) to select which organization context to work in
+5. **Given** a user belongs to multiple organizations, **When** they are in the dashboard, **Then** they see a workspace switcher (shadcn dropdown menu) to select which organization context to work in
 6. **Given** a user switches organizations, **When** they select a different workspace, **Then** the dashboard updates to show the selected organization's data within 2 seconds
 
 ---
@@ -166,7 +174,7 @@ Super admins can access a platform administration dashboard to manage the entire
 - **FR-LAND-001**: System MUST display a professional landing page at the root URL (/) with hero section showcasing the property portal
 - **FR-LAND-002**: Landing page MUST include clear value proposition describing the platform's benefits
 - **FR-LAND-003**: Landing page MUST include prominent "Sign Up" and "Sign In" call-to-action buttons in hero section
-- **FR-LAND-004**: Landing page MUST display key features section highlighting main platform capabilities
+- **FR-LAND-004**: Landing page MUST display key features section highlighting main platform capabilities (testimonials and pricing sections skipped for MVP)
 - **FR-LAND-005**: Landing page MUST be fully responsive across mobile, tablet, and desktop viewports
 - **FR-LAND-006**: Landing page MUST use shadcn/ui components, preferably component blocks (e.g., hero blocks, feature blocks)
 - **FR-LAND-007**: Landing page MUST implement smooth scrolling between sections
@@ -201,7 +209,7 @@ Super admins can access a platform administration dashboard to manage the entire
 - **FR-AUTH-008**: System MUST allow maximum 3 verification attempts per OTP code
 - **FR-AUTH-009**: System MUST enforce password complexity requirements (minimum 8 characters, uppercase, lowercase, digit)
 - **FR-AUTH-010**: System MUST hash passwords using secure hashing algorithms
-- **FR-AUTH-011**: System MUST send email verification links upon registration with email/password
+- **FR-AUTH-011**: System MUST send email verification links upon registration with email/password (verification optional for platform use, required only for password reset)
 - **FR-AUTH-012**: System MUST support password reset functionality with secure tokens
 - **FR-AUTH-013**: System MUST expire password reset tokens after 24 hours
 - **FR-AUTH-014**: System MUST store email, phone number, and authentication methods for each user
@@ -218,7 +226,7 @@ Super admins can access a platform administration dashboard to manage the entire
 - **FR-DASH-002**: Dashboard MUST display user information in header (name, avatar, current organization)
 - **FR-DASH-003**: Dashboard MUST show empty state with "Create Organization" CTA when user has no organizations using shadcn empty state components
 - **FR-DASH-004**: Dashboard MUST display organization-specific content when user has active organization
-- **FR-DASH-005**: Dashboard MUST include workspace switcher component (shadcn dropdown or command palette) for users with multiple organizations
+- **FR-DASH-005**: Dashboard MUST include workspace switcher component (shadcn dropdown menu) for users with multiple organizations
 - **FR-DASH-006**: Dashboard MUST display navigation sidebar with role-appropriate menu items using shadcn sidebar components
 - **FR-DASH-007**: Dashboard MUST highlight current active section in navigation
 - **FR-DASH-008**: Dashboard MUST show user's role badge in appropriate locations
@@ -236,7 +244,7 @@ Super admins can access a platform administration dashboard to manage the entire
 - **FR-ORG-UI-008**: System MUST show confirmation dialog (shadcn alert dialog) before sensitive organization actions
 
 #### Organization Backend (FR-ORG)
-- **FR-ORG-001**: Users MUST be able to create new organizations with globally unique names across the entire platform
+- **FR-ORG-001**: Users MUST be able to create new organizations with globally unique names across the entire platform (case-insensitive uniqueness - "ABC Corp" and "abc corp" considered the same)
 - **FR-ORG-002**: System MUST assign the creating user as the organization owner automatically
 - **FR-ORG-003**: System MUST support users belonging to multiple organizations simultaneously
 - **FR-ORG-004**: System MUST provide workspace switching functionality for users with multiple organization memberships
@@ -437,12 +445,15 @@ Super admins can access a platform administration dashboard to manage the entire
 - Google OAuth service maintains 99.9% uptime for authentication
 - Users have access to email or SMS for receiving invitations and verification
 - Platform will start with a single super admin account created via database seeding script during system initialization
-- Organization names are globally unique across the platform (enforced at database level)
-- Users can belong to unlimited organizations simultaneously
+- Organization names are globally unique across the platform with case-insensitive comparison (enforced at database level)
+- Users can belong to unlimited organizations simultaneously (UI optimized for 2-10 organizations, can scale if needed)
 - Platform admin compensation is calculated monthly based on tracked activities
 - Audit trail storage can accommodate 3-year retention requirements with automatic archival
 - Initial platform admin role types include Operations Admin, Customer Support Admin, and Business Admin
-- Backend API already exists or will be developed in parallel (this spec focuses on frontend dashboard)
+- Backend API is RESTful (not GraphQL)
+- Email verification is optional for platform use, required only for password reset feature
+- Profile photos are uploaded directly to backend API (backend handles storage in S3/cloud)
+- Session authentication uses httpOnly cookies for tokens, TanStack Query cache for user data
 - Email service provider is configured and operational
 - Domain is configured with proper DNS and SSL certificates
 - Hosting platform supports Next.js 16 with App Router features
@@ -456,7 +467,7 @@ Super admins can access a platform administration dashboard to manage the entire
 - Sentry account and project for error tracking and monitoring
 
 ### Backend API
-- RESTful or GraphQL API providing authentication endpoints
+- RESTful API providing authentication endpoints
 - Organization management endpoints
 - Team and invitation management endpoints
 - Role-based access control enforcement
@@ -487,7 +498,8 @@ Super admins can access a platform administration dashboard to manage the entire
 - System MUST encrypt sensitive data at rest and in transit (HTTPS only)
 - System MUST implement rate limiting on authentication attempts (5 OTP requests per phone per 15 minutes, 3 attempts per OTP, 5 login attempts per 15 minutes)
 - System MUST log all authentication events to Sentry for security audit purposes
-- System MUST use secure, httpOnly cookies for session management
+- System MUST use secure, httpOnly cookies for session token storage (auth token never exposed to client JavaScript)
+- System MUST cache user data in TanStack Query for performance (non-sensitive, cleared on logout)
 - System MUST implement CSRF protection for all state-changing operations
 - System MUST validate and sanitize all user inputs
 - Super admin accounts MUST use multi-factor authentication (MFA)

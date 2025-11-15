@@ -12,15 +12,26 @@
 - **Asked**: Is the backend API REST or GraphQL? This affects TanStack Query hook design and data fetching patterns.
 - **Context**: Spec mentions "RESTful or GraphQL API" in dependencies but doesn't specify which
 - **Impact**: Completely changes how we structure API client, query hooks, and data transformations
-- **Status**: ⏳ Awaiting response
+- **Answered**: ✅ **REST API**
+- **Status**: ✅ Resolved
 - **Related Requirements**: FR-DATA-001 to FR-DATA-008
+- **Implementation Notes**: 
+  - Use standard HTTP methods (GET, POST, PUT, DELETE, PATCH)
+  - TanStack Query with clear cache keys per endpoint
+  - Axios or fetch for API client
 
 **Q2**: **Organization Name Case Sensitivity**
 - **Asked**: Should organization names be case-insensitive for uniqueness? (e.g., should "ABC Corp" and "abc corp" be considered the same organization?)
 - **Context**: FR-ORG-001 says "globally unique names" but doesn't specify case handling
 - **Impact**: Affects validation logic, database constraints, error messages, and user experience during org creation
-- **Status**: ⏳ Awaiting response
+- **Answered**: ✅ **Case-insensitive** - "ABC Corp" and "abc corp" are considered the same
+- **Status**: ✅ Resolved
 - **Related Requirements**: FR-ORG-001, FR-ORG-UI-002
+- **Implementation Notes**:
+  - Store original case in database (preserve user's input)
+  - Validate uniqueness using lowercase comparison
+  - Backend should enforce case-insensitive unique constraint
+  - Error message: "An organization with this name already exists"
 
 ---
 
@@ -30,11 +41,15 @@
 - **Asked**: Which specific shadcn component should we use for workspace switcher? Dropdown menu or command palette (⌘K style)?
 - **Context**: FR-DASH-005 mentions "shadcn dropdown or command palette" without specifying preference
 - **Impact**: Affects UX for users with many organizations, keyboard shortcuts, and search functionality
-- **Considerations**:
-  - Dropdown: Simpler, good for < 10 organizations
-  - Command Palette: Better for power users, supports search, keyboard shortcuts
-- **Status**: ⏳ Awaiting response
-- **Related Requirements**: FR-DASH-005, FR-ORG-UI-006
+- **Answered**: ✅ **Dropdown Menu (Option A)** - Simple shadcn dropdown menu component
+- **Status**: ✅ Resolved
+- **Related Requirements**: FR-DASH-005, FR-ORG-UI-006, FR-ORG-UI-007
+- **Implementation Notes**:
+  - Use shadcn Dropdown Menu component
+  - Show organization name and user's role
+  - Display last active timestamp
+  - Include "Create Organization" option at bottom
+  - If many orgs become an issue, can upgrade to command palette later
 
 **Q4**: **Landing Page Content Specifics**
 - **Asked**: 
@@ -42,8 +57,14 @@
   b) Should pricing information be displayed on the landing page?
 - **Context**: FR-LAND-004 mentions "testimonials (placeholders)" and "pricing information (if applicable)"
 - **Impact**: Affects landing page structure, number of sections, component selection from shadcn blocks
-- **Status**: ⏳ Awaiting response
-- **Related Requirements**: FR-LAND-004
+- **Answered**: ✅ **Skip testimonials and pricing for now**
+- **Status**: ✅ Resolved
+- **Related Requirements**: FR-LAND-001 to FR-LAND-010
+- **Implementation Notes**:
+  - **Include**: Hero, Features, How It Works (optional 3-step process), Secondary CTA, Footer
+  - **Skip**: Testimonials, Pricing
+  - **Can add later**: When real testimonials available, when pricing model finalized
+  - Focus on clean, simple landing page that drives signups
 
 **Q5**: **Profile Photo Storage**
 - **Asked**: How should profile photos be uploaded and stored? 
@@ -52,18 +73,37 @@
   - Option C: Other mechanism?
 - **Context**: Constraints mention "File uploads (profile photos) MUST be limited to 5MB" but no upload mechanism specified
 - **Impact**: Affects file upload implementation, progress indicators, error handling, and API design
-- **Status**: ⏳ Awaiting response
+- **Answered**: ✅ **Option A - Direct Backend Upload**
+- **Status**: ✅ Resolved
 - **Related Requirements**: Constraints section, User entity
+- **Implementation Notes**:
+  - Use FormData to upload file to backend API endpoint
+  - Backend handles validation (file type, size limit 5MB)
+  - Backend stores in S3/cloud storage and returns URL
+  - Show upload progress with progress bar
+  - Image preview before upload
+  - Accept: image/jpeg, image/png, image/webp
+  - Display errors clearly (file too large, invalid format, etc.)
 
 **Q6**: **Session Storage Mechanism**
 - **Asked**: Should sessions be stored exclusively in httpOnly cookies, or use a combination (httpOnly cookie for token + localStorage for client-side state)?
 - **Context**: FR-AUTH-018 mentions "secure session management" and security requires "httpOnly cookies"
-- **Considerations**:
-  - httpOnly cookies only: More secure, but requires server-side session checks
-  - Hybrid: Cookie for auth token, localStorage for user preferences/UI state
-- **Impact**: Affects authentication middleware, session persistence, TanStack Query configuration, and server/client component split
-- **Status**: ⏳ Awaiting response
-- **Related Requirements**: FR-AUTH-018, Security Requirements
+- **Answered**: ✅ **Option B - Hybrid Approach**
+- **Status**: ✅ Resolved
+- **Related Requirements**: FR-AUTH-018, FR-AUTH-019, Security Requirements
+- **Implementation Notes**:
+  - **Auth Token**: Stored in httpOnly cookie (secure, XSS-proof)
+    - Backend sets cookie on successful login
+    - Frontend never accesses token directly
+    - Automatically sent with API requests
+  - **User Data**: Cached by TanStack Query (client-side, fast access)
+    - Initial fetch on app load
+    - Cached for performance
+    - Invalidated on logout/role change
+  - **UI Preferences**: localStorage (non-sensitive data only)
+    - Theme, language, etc.
+  - **Middleware**: Validates httpOnly cookie on protected routes
+  - **Session Duration**: 1 hour default, 7 days with "remember me"
 
 ---
 
@@ -73,19 +113,32 @@
 - **Asked**: Is email verification required for any features beyond password reset? Can unverified users fully use the platform?
 - **Context**: US2 acceptance scenario 2 says "email verification required for password reset" but doesn't specify if other features require it
 - **Impact**: Affects UI messaging, feature gating, user onboarding flow, and email verification prompts
-- **Status**: ⏳ Awaiting response
+- **Answered**: ✅ **Option A - Verification Optional (only required for password reset)**
+- **Status**: ✅ Resolved
 - **Related Requirements**: FR-AUTH-011, User Story 2
+- **Implementation Notes**:
+  - Unverified users can access all platform features
+  - Email verification only blocks password reset functionality
+  - Show dismissible banner: "Please verify your email address"
+  - Resend verification email option in user settings
+  - Better user experience, higher conversion rates
 
 **Q8**: **Maximum Organizations per User**
 - **Asked**: What's a reasonable expected maximum number of organizations per user?
 - **Context**: Assumptions say "Users can belong to unlimited organizations" but no practical limit defined
-- **Considerations**:
-  - If most users have < 10 orgs: Simple dropdown works well
-  - If 20+ orgs expected: Command palette with search is better
-  - If 100+ orgs possible: Need pagination/virtualization
 - **Impact**: Affects workspace switcher design, performance optimization, and UI/UX decisions
-- **Status**: ⏳ Awaiting response
+- **Answered**: ✅ **Option A - No limit, monitor and adjust**
+- **Status**: ✅ Resolved
 - **Related Requirements**: FR-DASH-005, Assumptions
+- **Implementation Notes**:
+  - Build for 2-10 organizations initially (simple dropdown works well)
+  - No hard limit enforced
+  - Monitor actual usage patterns
+  - If users consistently exceed 10 orgs, can add:
+    - Search functionality in dropdown
+    - Upgrade to command palette
+    - Pagination or virtualization
+  - Simple dropdown sufficient for MVP, optimize later if needed
 
 ---
 
@@ -144,18 +197,27 @@ These clarifications were already addressed in the initial specification:
 ## Summary
 
 **Total Questions**: 8
-- 🔴 Critical: 2
-- ⚠️ Important: 4
-- 📋 Nice to Have: 2
+- 🔴 Critical: 2 → ✅ All Resolved
+- ⚠️ Important: 4 → ✅ All Resolved
+- 📋 Nice to Have: 2 → ✅ All Resolved
 
-**Status**: ⏳ Awaiting responses before proceeding to planning phase
+**Status**: ✅ **ALL CLARIFICATIONS COMPLETE - READY FOR PLANNING**
+
+### Resolved Decisions Summary
+
+1. ✅ **Backend API**: REST
+2. ✅ **Organization Names**: Case-insensitive uniqueness
+3. ✅ **Workspace Switcher**: Simple dropdown menu
+4. ✅ **Landing Page**: Skip testimonials & pricing (Hero, Features, CTA, Footer)
+5. ✅ **Profile Photos**: Direct backend upload
+6. ✅ **Sessions**: Hybrid (httpOnly cookie + TanStack Query cache)
+7. ✅ **Email Verification**: Optional (only required for password reset)
+8. ✅ **Max Organizations**: No limit, build for 2-10, monitor and adjust
 
 **Next Steps**:
-1. Await answers to critical questions (Q1, Q2)
-2. Await answers to important questions (Q3-Q6)
-3. Optionally address nice-to-have questions (Q7-Q8)
-4. Update spec.md with clarified requirements
-5. Proceed to `/speckit.plan` once critical questions are resolved
+1. ✅ Update spec.md with clarified requirements
+2. ✅ Commit clarifications
+3. 🚀 **Ready to run `/speckit.plan`**
 
 ---
 
