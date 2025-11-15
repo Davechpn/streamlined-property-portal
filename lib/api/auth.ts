@@ -20,7 +20,7 @@ interface ApiResponse<T> {
 export async function register(data: RegisterRequest): Promise<AuthResponse> {
   try {
     const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/register', data);
-    Sentry.setUser({ email: response.data.data.user.email });
+    Sentry.setUser({ email: response.data.data.user.email || undefined });
     return response.data.data;
   } catch (error) {
     Sentry.captureException(error, {
@@ -34,7 +34,7 @@ export async function register(data: RegisterRequest): Promise<AuthResponse> {
 export async function login(data: LoginRequest): Promise<AuthResponse> {
   try {
     const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/login', data);
-    Sentry.setUser({ email: response.data.data.user.email });
+    Sentry.setUser({ email: response.data.data.user.email || undefined });
     return response.data.data;
   } catch (error) {
     Sentry.captureException(error, {
@@ -74,7 +74,7 @@ export async function requestOTP(data: OTPRequestRequest): Promise<{ success: bo
 export async function verifyOTP(data: OTPVerifyRequest): Promise<AuthResponse> {
   try {
     const response = await apiClient.post<ApiResponse<AuthResponse>>('/auth/otp/verify', data);
-    Sentry.setUser({ email: response.data.data.user.email });
+    Sentry.setUser({ email: response.data.data.user.email || undefined });
     return response.data.data;
   } catch (error) {
     Sentry.captureException(error, {
