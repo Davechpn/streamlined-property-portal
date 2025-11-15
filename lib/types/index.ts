@@ -480,6 +480,9 @@ export interface ErrorResponse {
 
 export interface OrganizationFilters {
   status?: OrganizationStatus;
+  search?: string;
+  limit?: number;
+  offset?: number;
 }
 
 export interface InvitationFilters {
@@ -491,11 +494,26 @@ export interface MemberFilters {
   status?: MemberStatus;
 }
 
+export interface UserFilters {
+  status?: UserStatus;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
 export interface AdminOrganizationFilters {
   page?: number;
   pageSize?: number;
   status?: OrganizationStatus;
   search?: string;
+}
+
+export interface AdminActivityFilters {
+  activityType?: ActivityType;
+  adminId?: string;
+  organizationId?: string;
+  limit?: number;
+  offset?: number;
 }
 
 export interface AdminActivityFilters {
