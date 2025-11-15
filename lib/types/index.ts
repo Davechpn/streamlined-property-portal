@@ -89,6 +89,39 @@ export interface Invitation {
 
 export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
 
+// ============================================================================
+// Organization Activity & Audit Types
+// ============================================================================
+
+export interface Activity {
+  id: string;
+  organizationId: string;
+  actorId: string;
+  type: ActivityEventType;
+  metadata: Record<string, any>;
+  createdAt: Date;
+  actor: {
+    id: string;
+    name: string;
+    email: string | null;
+  };
+}
+
+export type ActivityEventType =
+  | 'member.invited'
+  | 'member.joined'
+  | 'member.removed'
+  | 'member.role_changed'
+  | 'organization.created'
+  | 'organization.updated'
+  | 'invitation.sent'
+  | 'invitation.accepted'
+  | 'invitation.revoked';
+
+// ============================================================================
+// Platform Admin Types
+// ============================================================================
+
 export interface PlatformAdminRole {
   id: string;
   userId: string;

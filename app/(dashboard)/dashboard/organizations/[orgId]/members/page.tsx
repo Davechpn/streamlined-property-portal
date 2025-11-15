@@ -1,6 +1,6 @@
 "use client"
 
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useMembers, useRemoveMember, useUpdateMemberRole } from "@/lib/hooks/useMembers"
 import { useUser } from "@/lib/hooks/useAuth"
 import { usePermissions } from "@/lib/hooks/usePermissions"
@@ -67,6 +67,7 @@ const roleColors: Record<Role, string> = {
 
 export default function MembersPage() {
   const params = useParams()
+  const router = useRouter()
   const orgId = params?.orgId as string
   const { data: members, isLoading } = useMembers(orgId)
   const { data: currentUser } = useUser()
@@ -131,8 +132,12 @@ export default function MembersPage() {
                 const isOwner = member.role === "owner"
 
                 return (
-                  <TableRow key={member.id}>
-                    <TableCell>
+                  <TableRow 
+                    key={member.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => router.push(`/dashboard/organizations/${orgId}/members/${member.id}`)}
+                  >
+                    <TableCell onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-8 w-8">
                           <AvatarFallback>
@@ -151,7 +156,7 @@ export default function MembersPage() {
                     <TableCell>
                       {new Date(member.joinedAt).toLocaleDateString()}
                     </TableCell>
-                    <TableCell className="text-right">
+                    <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex gap-2 justify-end">
                         {!isOwner && permissions.canModifyMember(member.role) && (
                           <>
