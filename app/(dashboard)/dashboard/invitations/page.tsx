@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 import { useParams } from "next/navigation"
+import { useCurrentOrganization } from "@/lib/hooks/useOrganizations"
+import { usePermissions } from "@/lib/hooks/usePermissions"
 import {
   useInvitations,
   useCreateInvitation,
@@ -84,8 +86,10 @@ const statusColors: Record<InvitationStatus, string> = {
 
 export default function InvitationsPage() {
   const params = useParams()
-  const orgId = params?.orgId as string
+  const { data: currentOrg } = useCurrentOrganization()
+  const orgId = currentOrg?.id || ""
   const { data: invitations, isLoading } = useInvitations(orgId)
+  const permissions = usePermissions({ orgId })
   const createInvitation = useCreateInvitation(orgId)
   const resendInvitation = useResendInvitation(orgId)
   const cancelInvitation = useCancelInvitation(orgId)
@@ -145,7 +149,8 @@ export default function InvitationsPage() {
             Send and manage team invitations
           </p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        {permissions.canManageInvitations && (
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
@@ -225,6 +230,7 @@ export default function InvitationsPage() {
             </form>
           </DialogContent>
         </Dialog>
+        )}
       </div>
 
       {error && (
@@ -268,22 +274,26 @@ export default function InvitationsPage() {
                     <div className="flex gap-2 justify-end">
                       {invitation.status === "pending" && (
                         <>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleResend(invitation.id)}
-                            disabled={resendInvitation.isPending}
-                          >
-                            <Send className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleCancel(invitation.id)}
-                            disabled={cancelInvitation.isPending}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
+                          {permissions.canResendInvitations && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleResend(invitation.id)}
+                              disabled={resendInvitation.isPending}
+                            >
+                              <Send className="h-4 w-4" />
+                            </Button>
+                          )}
+                          {permissions.canRevokeInvitations && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleCancel(invitation.id)}
+                              disabled={cancelInvitation.isPending}
+                            >
+                              <X className="h-4 w-4" />
+                            </Button>
+                          )}
                         </>
                       )}
                     </div>

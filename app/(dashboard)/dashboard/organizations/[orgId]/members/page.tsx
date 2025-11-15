@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation"
 import { useMembers, useRemoveMember, useUpdateMemberRole } from "@/lib/hooks/useMembers"
 import { useUser } from "@/lib/hooks/useAuth"
+import { usePermissions } from "@/lib/hooks/usePermissions"
 import {
   Table,
   TableBody,
@@ -69,6 +70,7 @@ export default function MembersPage() {
   const { data: members, isLoading } = useMembers(orgId)
   const { data: currentUser } = useUser()
   const removeMember = useRemoveMember(orgId)
+  const permissions = usePermissions({ orgId })
   const [error, setError] = useState<string | null>(null)
 
   const handleRemove = async (memberId: string) => {
@@ -147,12 +149,12 @@ export default function MembersPage() {
                       {new Date(member.joinedAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      {!isOwner && !isCurrentUser && (
+                      {!isOwner && !isCurrentUser && permissions.canModifyMember(member.role) && (
                         <Button
                           variant="ghost"
                           size="sm"
                           onClick={() => handleRemove(member.id)}
-                          disabled={removeMember.isPending}
+                          disabled={removeMember.isPending || !permissions.canRemoveMembers}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
