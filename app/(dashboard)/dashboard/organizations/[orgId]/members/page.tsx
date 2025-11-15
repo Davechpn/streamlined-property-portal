@@ -17,10 +17,11 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Trash2, Users } from "lucide-react"
+import { Trash2, Users, Edit } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useState } from "react"
-import type { Role } from "@/lib/types"
+import { ChangeRoleDialog } from "@/components/members/ChangeRoleDialog"
+import type { Role, OrganizationMemberWithUser } from "@/lib/types"
 
 function MembersSkeleton() {
   return (
@@ -72,6 +73,8 @@ export default function MembersPage() {
   const removeMember = useRemoveMember(orgId)
   const permissions = usePermissions({ orgId })
   const [error, setError] = useState<string | null>(null)
+  const [selectedMember, setSelectedMember] = useState<OrganizationMemberWithUser | null>(null)
+  const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false)
 
   const handleRemove = async (memberId: string) => {
     if (!confirm("Are you sure you want to remove this member?")) return
@@ -149,16 +152,34 @@ export default function MembersPage() {
                       {new Date(member.joinedAt).toLocaleDateString()}
                     </TableCell>
                     <TableCell className="text-right">
-                      {!isOwner && !isCurrentUser && permissions.canModifyMember(member.role) && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemove(member.id)}
-                          disabled={removeMember.isPending || !permissions.canRemoveMembers}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
+                      <div className="flex gap-2 justify-end">
+                        {!isOwner && permissions.canModifyMember(member.role) && (
+                          <>
+                            {permissions.canUpdateMemberRoles && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setSelectedMember(member)
+                                  setIsRoleDialogOpen(true)
+                                }}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {!isCurrentUser && permissions.canRemoveMembers && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemove(member.id)}
+                                disabled={removeMember.isPending}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 )
@@ -168,6 +189,16 @@ export default function MembersPage() {
         </Card>
       ) : (
         <EmptyState />
+      )}
+
+      {/* Change Role Dialog */}
+      {selectedMember && (
+        <ChangeRoleDialog
+          orgId={orgId}
+          member={selectedMember}
+          open={isRoleDialogOpen}
+          onOpenChange={setIsRoleDialogOpen}
+        />
       )}
     </div>
   )
