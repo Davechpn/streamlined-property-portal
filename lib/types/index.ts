@@ -453,19 +453,15 @@ export interface PasswordResetRequestRequest {
 }
 
 export interface PasswordResetRequest {
-  token: string;
-  newPassword: string;
+  email: string;
+  resetToken: string;
+  password: string;
+  confirmPassword: string;
 }
 
 export interface UpdateProfileRequest {
   name: string;
   profilePhotoUrl?: string | null;
-}
-
-export interface ChangePasswordRequest {
-  currentPassword: string;
-  newPassword: string;
-  confirmPassword: string;
 }
 
 export interface CreateOrganizationRequest {

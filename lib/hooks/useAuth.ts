@@ -9,7 +9,6 @@ import type {
   PasswordResetRequestRequest,
   PasswordResetRequest,
   UpdateProfileRequest,
-  ChangePasswordRequest,
 } from '@/lib/types';
 
 // Query keys
@@ -178,12 +177,5 @@ export function useUpdateProfile() {
       queryClient.invalidateQueries({ queryKey: ['profile'] });
       queryClient.invalidateQueries({ queryKey: authKeys.user });
     },
-  });
-}
-
-// Change password
-export function useChangePassword() {
-  return useMutation({
-    mutationFn: (data: ChangePasswordRequest) => authApi.changePassword(data),
   });
 }

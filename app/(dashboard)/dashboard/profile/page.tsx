@@ -144,7 +144,7 @@ export default function ProfilePage() {
             <div className="flex flex-col gap-2">
               <EditProfileDialog user={user} />
               {user.authenticationMethods.includes('email') && (
-                <ChangePasswordDialog />
+                <ChangePasswordDialog userEmail={user.email} />
               )}
             </div>
           </div>

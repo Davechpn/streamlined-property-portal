@@ -9,7 +9,6 @@ import type {
   PasswordResetRequestRequest,
   PasswordResetRequest,
   UpdateProfileRequest,
-  ChangePasswordRequest,
 } from '@/lib/types';
 
 // Generic API response wrapper
@@ -163,10 +162,10 @@ export async function verifyOTP(data: OTPVerifyRequest): Promise<AuthResponse> {
 }
 
 // Request password reset
-export async function requestPasswordReset(data: PasswordResetRequestRequest): Promise<{ success: boolean }> {
+export async function requestPasswordReset(data: PasswordResetRequestRequest): Promise<{ message: string; resetToken: string }> {
   try {
-    const response = await apiClient.post<ApiResponse<{ success: boolean }>>('/auth/password/reset-request', data);
-    return response.data.data;
+    const response = await apiClient.post<{ message: string; resetToken: string }>('/auth/forgot-password', data);
+    return response.data;
   } catch (error) {
     Sentry.captureException(error, {
       tags: { auth_action: 'request_password_reset' },
@@ -176,10 +175,10 @@ export async function requestPasswordReset(data: PasswordResetRequestRequest): P
 }
 
 // Reset password with token
-export async function resetPassword(data: PasswordResetRequest): Promise<{ success: boolean }> {
+export async function resetPassword(data: PasswordResetRequest): Promise<{ success: boolean; message?: string }> {
   try {
-    const response = await apiClient.post<ApiResponse<{ success: boolean }>>('/auth/password/reset', data);
-    return response.data.data;
+    const response = await apiClient.post<{ success: boolean; message?: string }>('/auth/reset-password', data);
+    return response.data;
   } catch (error) {
     Sentry.captureException(error, {
       tags: { auth_action: 'reset_password' },
@@ -236,19 +235,6 @@ export async function updateProfile(data: UpdateProfileRequest): Promise<AuthRes
   } catch (error) {
     Sentry.captureException(error, {
       tags: { auth_action: 'update_profile' },
-    });
-    throw error;
-  }
-}
-
-// Change password (for authenticated users)
-export async function changePassword(data: ChangePasswordRequest): Promise<{ success: boolean; message: string }> {
-  try {
-    const response = await apiClient.post<{ success: boolean; message: string }>('/auth/change-password', data);
-    return response.data;
-  } catch (error) {
-    Sentry.captureException(error, {
-      tags: { auth_action: 'change_password' },
     });
     throw error;
   }
