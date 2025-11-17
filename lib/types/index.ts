@@ -17,14 +17,21 @@ export interface User {
   name: string;
   email: string | null;
   phoneNumber: string | null;
-  profilePhoto: string | null;
-  emailVerified: boolean;
-  phoneVerified: boolean;
-  authMethods: AuthMethod[];
-  lastActive: Date;
-  createdAt: Date;
-  status: UserStatus;
+  profilePhotoUrl: string | null;
+  authenticationMethods: string[];
+  lastActiveAt: string;
+  createdAt: string;
+  isActive: boolean;
+  isEmailVerified: boolean;
+  isPhoneVerified: boolean;
   platformAdminRole?: PlatformAdminRole | null;
+}
+
+export interface ProfileResponse {
+  user: User;
+  organizations: OrganizationMembership[];
+  activeSessions: any[];
+  permissions: Record<string, any>;
 }
 
 export type AuthMethod = 'google' | 'email' | 'phone';
@@ -34,15 +41,22 @@ export type UserStatus = 'active' | 'inactive' | 'suspended';
 export interface Organization {
   id: string;
   name: string;
-  slug: string;
   description: string | null;
-  ownerId: string;
-  logoUrl: string | null;
-  settings: OrganizationSettings;
-  lastActive: Date;
-  createdAt: Date;
-  status: OrganizationStatus;
-  onboardedBy: string | null;
+  website: string | null;
+  phoneNumber: string | null;
+  address: string | null;
+  city: string | null;
+  state: string | null;
+  country: string | null;
+  postalCode: string | null;
+  timezone: string;
+  currency: string;
+  createdAt: string;
+  updatedAt: string;
+  isActive: boolean;
+  userRole?: Role;
+  joinedAt?: string;
+  memberCount?: number;
 }
 
 export interface OrganizationSettings {
@@ -88,6 +102,20 @@ export interface Invitation {
 }
 
 export type InvitationStatus = 'pending' | 'accepted' | 'expired' | 'revoked';
+
+// Organization Membership from API response
+export interface OrganizationMembership {
+  id: string;
+  organizationId: string;
+  organizationName: string;
+  user: User;
+  organization: Organization;
+  role: Role;
+  status: string;
+  joinedAt: string;
+  updatedAt: string;
+  isActive: boolean;
+}
 
 // ============================================================================
 // Organization Activity & Audit Types
@@ -231,10 +259,11 @@ export interface DeviceInfo {
 // ============================================================================
 
 export interface AuthResponse {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: string;
   user: User;
-  session: SessionInfo;
-  organization: Organization | null;
-  organizations: OrganizationMembershipInfo[];
+  organizations: OrganizationMembership[];
 }
 
 export interface SessionInfo {
@@ -266,17 +295,13 @@ export interface OrganizationDetailResponse {
 
 export interface OrganizationMemberWithUser {
   id: string;
-  user: {
-    id: string;
-    name: string;
-    email: string | null;
-    phoneNumber: string | null;
-    profilePhoto: string | null;
-  };
+  userId: string;
+  name: string;
+  userName: string;
+  email: string;
   role: Role;
-  status: MemberStatus;
-  joinedAt: Date;
-  lastActive: Date;
+  status: string;
+  joinedAt: string;
 }
 
 export interface OrganizationPermissions {
@@ -297,19 +322,18 @@ export interface InvitationListResponse {
 
 export interface InvitationWithDetails {
   id: string;
-  inviteeContact: string;
-  assignedRole: Role;
+  organizationId: string;
+  organizationName: string;
+  inviterName: string;
+  email: string | null;
+  phoneNumber: string | null;
+  role: Role;
   message: string | null;
   status: InvitationStatus;
-  createdAt: Date;
-  expiresAt: Date;
-  acceptedAt: Date | null;
-  inviter: {
-    id: string;
-    name: string;
-    profilePhoto: string | null;
-  };
-  daysUntilExpiration: number;
+  createdAt: string;
+  expiresAt: string;
+  isExpired: boolean;
+  daysRemaining: number;
 }
 
 export interface PlatformAdminDashboardResponse {
@@ -392,20 +416,26 @@ export interface PaginationInfo {
 // ============================================================================
 
 export interface RegisterRequest {
-  method: 'email' | 'phone' | 'google';
-  email?: string;
-  password?: string;
-  phoneNumber?: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
   name: string;
-  googleToken?: string;
+  organizationName: string;
+  organizationDescription?: string;
+  website?: string;
+  phoneNumber?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postalCode?: string;
+  timezone?: string;
+  currency?: string;
 }
 
 export interface LoginRequest {
-  method: 'email' | 'phone' | 'google';
-  email?: string;
-  password?: string;
-  phoneNumber?: string;
-  googleToken?: string;
+  email: string;
+  password: string;
   rememberMe?: boolean;
 }
 
@@ -427,6 +457,17 @@ export interface PasswordResetRequest {
   newPassword: string;
 }
 
+export interface UpdateProfileRequest {
+  name: string;
+  profilePhotoUrl?: string | null;
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 export interface CreateOrganizationRequest {
   name: string;
   description?: string;
@@ -435,6 +476,15 @@ export interface CreateOrganizationRequest {
 export interface UpdateOrganizationRequest {
   name?: string;
   description?: string;
+  website?: string;
+  phoneNumber?: string;
+  address?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postalCode?: string;
+  timezone?: string;
+  currency?: string;
   settings?: Partial<OrganizationSettings>;
 }
 

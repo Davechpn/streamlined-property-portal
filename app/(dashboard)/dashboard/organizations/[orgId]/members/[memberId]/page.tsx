@@ -24,7 +24,7 @@ import {
 import { ArrowLeft, Mail, Phone, Calendar, Shield, Trash2, Edit } from "lucide-react"
 import { ChangeRoleDialog } from "@/components/members/ChangeRoleDialog"
 import { ActivityFeed } from "@/components/activity/ActivityFeed"
-import type { OrganizationMemberWithUser } from "@/lib/types"
+import type { OrganizationMemberWithUser, Role } from "@/lib/types"
 
 function ProfileSkeleton() {
   return (
@@ -49,7 +49,7 @@ function ProfileSkeleton() {
   )
 }
 
-const ROLE_DESCRIPTIONS = {
+const ROLE_DESCRIPTIONS: Record<Role, string> = {
   owner: "Full control over the organization and all its resources",
   admin: "Can manage organization settings, members, and all properties",
   manager: "Can invite members and manage assigned properties",
@@ -57,7 +57,7 @@ const ROLE_DESCRIPTIONS = {
   viewer: "Read-only access to organization resources",
 }
 
-const ROLE_PERMISSIONS = {
+const ROLE_PERMISSIONS: Record<Role, string[]> = {
   owner: [
     "Manage organization settings",
     "Delete organization",
@@ -181,7 +181,7 @@ export default function MemberProfilePage() {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Remove Team Member?</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to remove {member.user.name} from this
+                      Are you sure you want to remove {member.name} from this
                       organization? They will lose all access immediately.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
@@ -215,24 +215,19 @@ export default function MemberProfilePage() {
             <CardContent className="pt-6 text-center space-y-4">
               <Avatar className="h-24 w-24 mx-auto">
                 <AvatarFallback className="text-2xl">
-                  {getInitials(member.user.name)}
+                  {getInitials(member.name)}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h2 className="text-2xl font-bold">{member.user.name}</h2>
+                <h2 className="text-2xl font-bold">{member.name}</h2>
+                <p className="text-sm text-muted-foreground">@{member.userName}</p>
                 <Badge className="mt-2 capitalize">{member.role}</Badge>
               </div>
               <div className="space-y-2 text-left">
-                {member.user.email && (
+                {member.email && (
                   <div className="flex items-center gap-2 text-sm">
                     <Mail className="h-4 w-4 text-muted-foreground" />
-                    <span>{member.user.email}</span>
-                  </div>
-                )}
-                {member.user.phoneNumber && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone className="h-4 w-4 text-muted-foreground" />
-                    <span>{member.user.phoneNumber}</span>
+                    <span>{member.email}</span>
                   </div>
                 )}
                 <div className="flex items-center gap-2 text-sm">
@@ -254,14 +249,14 @@ export default function MemberProfilePage() {
                 Role & Permissions
               </CardTitle>
               <CardDescription>
-                {ROLE_DESCRIPTIONS[member.role]}
+                {ROLE_DESCRIPTIONS[member.role] || "No description available"}
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
                 <h4 className="font-semibold text-sm">Permissions:</h4>
                 <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                  {ROLE_PERMISSIONS[member.role].map((permission, i) => (
+                  {(ROLE_PERMISSIONS[member.role] || []).map((permission, i) => (
                     <li key={i}>{permission}</li>
                   ))}
                 </ul>

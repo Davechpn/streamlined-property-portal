@@ -9,6 +9,8 @@ import {
   ChevronsUpDown,
   Plus,
   Settings,
+  User as UserIcon,
+  LayoutDashboard,
 } from "lucide-react"
 
 import {
@@ -36,9 +38,14 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useUser, useLogout } from "@/lib/hooks/useAuth"
 import { useOrganizations, useCurrentOrganization, useSwitchWorkspace } from "@/lib/hooks/useOrganizations"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 
-const navItems = [
+const getNavItems = (currentOrgId?: string) => [
+  {
+    title: "Dashboard",
+    url: "/dashboard",
+    icon: LayoutDashboard,
+  },
   {
     title: "Organizations",
     url: "/dashboard/organizations",
@@ -46,13 +53,18 @@ const navItems = [
   },
   {
     title: "Team Members",
-    url: "/dashboard/members",
+    url: currentOrgId ? `/dashboard/organizations/${currentOrgId}/members` : "/dashboard/organizations",
     icon: Users,
   },
   {
     title: "Invitations",
     url: "/dashboard/invitations",
     icon: UserPlus,
+  },
+  {
+    title: "Profile",
+    url: "/dashboard/profile",
+    icon: UserIcon,
   },
 ]
 
@@ -63,11 +75,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const switchWorkspace = useSwitchWorkspace()
   const logout = useLogout()
   const router = useRouter()
+  const pathname = usePathname()
   const { setOpenMobile } = useSidebar()
+
+  const navItems = getNavItems(currentOrg?.id)
 
   const handleSwitchWorkspace = async (orgId: string) => {
     await switchWorkspace.mutateAsync(orgId)
-    router.refresh()
+    
+    // If currently on a members page, navigate to the new org's members page
+    if (pathname?.includes('/members')) {
+      router.push(`/dashboard/organizations/${orgId}/members`)
+    } 
+    // If on organization settings page, navigate to new org's settings
+    else if (pathname?.includes('/settings') && pathname?.includes('/organizations/')) {
+      router.push(`/dashboard/organizations/${orgId}/settings`)
+    }
+    // Otherwise just refresh to update the data
+    else {
+      router.refresh()
+    }
   }
 
   const handleLogout = async () => {
@@ -94,19 +121,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              <DropdownMenuTrigger asChild suppressHydrationWarning>
                 <SidebarMenuButton
                   size="lg"
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  suppressHydrationWarning
                 >
                   {orgsLoading ? (
-                    <>
+                    <div suppressHydrationWarning>
                       <Skeleton className="h-8 w-8 rounded-lg" />
                       <div className="flex flex-col gap-0.5">
                         <Skeleton className="h-4 w-24" />
                         <Skeleton className="h-3 w-16" />
                       </div>
-                    </>
+                    </div>
                   ) : currentOrg ? (
                     <>
                       <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
@@ -196,19 +224,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              <DropdownMenuTrigger asChild suppressHydrationWarning>
                 <SidebarMenuButton
                   size="lg"
                   className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                  suppressHydrationWarning
                 >
                   {userLoading ? (
-                    <>
+                    <div suppressHydrationWarning>
                       <Skeleton className="h-8 w-8 rounded-lg" />
                       <div className="flex flex-col gap-0.5">
                         <Skeleton className="h-4 w-24" />
                         <Skeleton className="h-3 w-32" />
                       </div>
-                    </>
+                    </div>
                   ) : user ? (
                     <>
                       <Avatar className="h-8 w-8 rounded-lg">

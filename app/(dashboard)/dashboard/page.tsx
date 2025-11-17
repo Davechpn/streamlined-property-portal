@@ -2,7 +2,7 @@
 
 import { useOrganizations, useCurrentOrganization } from "@/lib/hooks/useOrganizations"
 import { useMembers } from "@/lib/hooks/useMembers"
-import { useInvitations } from "@/lib/hooks/useInvitations"
+import { useOrganizationInvitations } from "@/lib/hooks/useInvitations"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -52,7 +52,7 @@ export default function DashboardPage() {
   const { data: organizations, isLoading: orgsLoading } = useOrganizations()
   const { data: currentOrg, isLoading: currentOrgLoading } = useCurrentOrganization()
   const { data: members } = useMembers(currentOrg?.id || "")
-  const { data: invitations } = useInvitations(currentOrg?.id || "")
+  const { data: invitationsData } = useOrganizationInvitations(currentOrg?.id || "")
 
   const isLoading = orgsLoading || currentOrgLoading
 
@@ -64,7 +64,7 @@ export default function DashboardPage() {
     return <EmptyState />
   }
 
-  const pendingInvitations = invitations?.filter((inv) => inv.status === "pending") || []
+  const pendingInvitations = invitationsData?.sentInvitations?.filter((inv) => inv.status.toLowerCase() === "pending") || []
 
   return (
     <div className="space-y-6">

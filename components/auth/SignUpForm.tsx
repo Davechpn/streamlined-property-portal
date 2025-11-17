@@ -5,71 +5,62 @@ import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AuthMethodSelector, type AuthMethod } from './AuthMethodSelector';
-import { EmailPasswordForm } from './EmailPasswordForm';
-import { PhoneOTPForm, OTPVerification, useOTPCountdown } from './PhoneOTPForm';
-import { GoogleAuthButton } from './GoogleAuthButton';
-import { useRegister, useRequestOTP, useVerifyOTP } from '@/lib/hooks/useAuth';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useRegister } from '@/lib/hooks/useAuth';
 
 export function SignUpForm() {
-  const [method, setMethod] = useState<AuthMethod>('email');
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
-  const [otp, setOTP] = useState('');
-  const [otpRequested, setOTPRequested] = useState(false);
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    organizationName: '',
+    organizationDescription: '',
+    website: '',
+    phoneNumber: '',
+    address: '',
+    city: '',
+    state: '',
+    country: '',
+    postalCode: '',
+    timezone: 'UTC',
+    currency: 'USD',
+  });
 
   const register = useRegister();
-  const requestOTP = useRequestOTP();
-  const verifyOTP = useVerifyOTP();
-  const { countdown, canResend, startCountdown } = useOTPCountdown();
 
-  const handleRequestOTP = async () => {
-    try {
-      await requestOTP.mutateAsync({ phoneNumber: phone });
-      setOTPRequested(true);
-      startCountdown();
-    } catch (error) {
-      // Error handled by mutation
-    }
-  };
-
-  const handleResendOTP = async () => {
-    await handleRequestOTP();
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (method === 'email') {
-      register.mutate({ method: 'email', email, password, name });
-    } else if (method === 'phone') {
-      if (!otpRequested) {
-        await handleRequestOTP();
-      } else {
-        verifyOTP.mutate({ phoneNumber: phone, code: otp });
-      }
+    if (formData.password !== formData.confirmPassword) {
+      alert('Passwords do not match');
+      return;
     }
-    // Google is handled by GoogleAuthButton
+
+    register.mutate(formData);
   };
 
-  const isLoading = register.isPending || requestOTP.isPending || verifyOTP.isPending;
-  const error = register.error || requestOTP.error || verifyOTP.error;
+  const isLoading = register.isPending;
+  const error = register.error;
 
   return (
-    <Card>
+    <Card className="w-full max-w-2xl mx-auto">
       <CardHeader>
         <CardTitle>Create an account</CardTitle>
         <CardDescription>
-          Sign up to get started with Streamlined Portal
+          Sign up to get started with Streamlined Property Portal
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Method Selector */}
-          <AuthMethodSelector selected={method} onSelect={setMethod} />
-
           {/* Error Alert */}
           {error && (
             <Alert variant="destructive">
@@ -79,65 +70,221 @@ export function SignUpForm() {
             </Alert>
           )}
 
-          {/* Email/Password Form */}
-          {method === 'email' && (
-            <>
+          {/* Personal Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Personal Information</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name *</Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="John Doe"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="user@example.com"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">Password *</Label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                placeholder="Enter password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="confirmPassword">Confirm Password *</Label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                placeholder="Confirm password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="phoneNumber">Phone Number</Label>
+              <Input
+                id="phoneNumber"
+                name="phoneNumber"
+                type="tel"
+                placeholder="+1234567890"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          {/* Organization Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Organization Information</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="organizationName">Organization Name *</Label>
+              <Input
+                id="organizationName"
+                name="organizationName"
+                type="text"
+                placeholder="Acme Properties"
+                value={formData.organizationName}
+                onChange={handleChange}
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="organizationDescription">Organization Description</Label>
+              <Input
+                id="organizationDescription"
+                name="organizationDescription"
+                type="text"
+                placeholder="Brief description of your organization"
+                value={formData.organizationDescription}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="website">Website</Label>
+              <Input
+                id="website"
+                name="website"
+                type="url"
+                placeholder="https://www.example.com"
+                value={formData.website}
+                onChange={handleChange}
+              />
+            </div>
+          </div>
+
+          {/* Address Information */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Address Information</h3>
+            
+            <div className="space-y-2">
+              <Label htmlFor="address">Street Address</Label>
+              <Input
+                id="address"
+                name="address"
+                type="text"
+                placeholder="123 Main St"
+                value={formData.address}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-medium">
-                  Full Name
-                </label>
-                <input
-                  id="name"
+                <Label htmlFor="city">City</Label>
+                <Input
+                  id="city"
+                  name="city"
                   type="text"
-                  placeholder="John Doe"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  required
+                  placeholder="New York"
+                  value={formData.city}
+                  onChange={handleChange}
                 />
               </div>
-              <EmailPasswordForm
-                email={email}
-                password={password}
-                onEmailChange={setEmail}
-                onPasswordChange={setPassword}
-              />
-            </>
-          )}
 
-          {/* Phone/OTP Form */}
-          {method === 'phone' && !otpRequested && (
-            <PhoneOTPForm
-              phone={phone}
-              onPhoneChange={setPhone}
-              onRequestOTP={handleRequestOTP}
-              isRequestingOTP={requestOTP.isPending}
-              otpRequested={otpRequested}
-            />
-          )}
+              <div className="space-y-2">
+                <Label htmlFor="state">State/Province</Label>
+                <Input
+                  id="state"
+                  name="state"
+                  type="text"
+                  placeholder="NY"
+                  value={formData.state}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
 
-          {/* OTP Verification */}
-          {method === 'phone' && otpRequested && (
-            <OTPVerification
-              otp={otp}
-              onOTPChange={setOTP}
-              onResendOTP={handleResendOTP}
-              canResend={canResend}
-              countdown={countdown}
-            />
-          )}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="country">Country</Label>
+                <Input
+                  id="country"
+                  name="country"
+                  type="text"
+                  placeholder="USA"
+                  value={formData.country}
+                  onChange={handleChange}
+                />
+              </div>
 
-          {/* Google OAuth */}
-          {method === 'google' && (
-            <GoogleAuthButton />
-          )}
+              <div className="space-y-2">
+                <Label htmlFor="postalCode">Postal Code</Label>
+                <Input
+                  id="postalCode"
+                  name="postalCode"
+                  type="text"
+                  placeholder="10001"
+                  value={formData.postalCode}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+          </div>
 
-          {/* Submit Button (Email and Phone OTP) */}
-          {method !== 'google' && (
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Creating account...' : 'Sign Up'}
-            </Button>
-          )}
+          {/* Settings */}
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">Settings</h3>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="timezone">Timezone</Label>
+                <Input
+                  id="timezone"
+                  name="timezone"
+                  type="text"
+                  placeholder="UTC"
+                  value={formData.timezone}
+                  onChange={handleChange}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="currency">Currency</Label>
+                <Input
+                  id="currency"
+                  name="currency"
+                  type="text"
+                  placeholder="USD"
+                  value={formData.currency}
+                  onChange={handleChange}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Submit Button */}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? 'Creating account...' : 'Sign Up'}
+          </Button>
         </form>
       </CardContent>
       <CardFooter className="flex justify-center">

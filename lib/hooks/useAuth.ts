@@ -8,6 +8,8 @@ import type {
   OTPVerifyRequest,
   PasswordResetRequestRequest,
   PasswordResetRequest,
+  UpdateProfileRequest,
+  ChangePasswordRequest,
 } from '@/lib/types';
 
 // Query keys
@@ -17,11 +19,15 @@ export const authKeys = {
 
 // Get current user
 export function useUser() {
+  // Check if user has a token before attempting to fetch
+  const hasToken = typeof window !== 'undefined' && !!localStorage.getItem('accessToken');
+  
   return useQuery({
     queryKey: authKeys.user,
     queryFn: authApi.getCurrentUser,
     retry: false,
     staleTime: 5 * 60 * 1000, // 5 minutes
+    enabled: hasToken, // Only fetch if we have a token
   });
 }
 
@@ -49,10 +55,15 @@ export function useLogin() {
   return useMutation({
     mutationFn: (data: LoginRequest) => authApi.login(data),
     onSuccess: (data) => {
+      console.log('Login successful, user data:', data.user);
       // Set user in cache
       queryClient.setQueryData(authKeys.user, data.user);
       // Redirect to dashboard
+      console.log('Redirecting to dashboard...');
       router.push('/dashboard');
+    },
+    onError: (error) => {
+      console.error('Login error:', error);
     },
   });
 }
@@ -64,13 +75,24 @@ export function useLogout() {
 
   return useMutation({
     mutationFn: authApi.logout,
+    onMutate: async () => {
+      // Cancel all outgoing queries before logout
+      await queryClient.cancelQueries();
+    },
     onSuccess: () => {
       // Clear user from cache
       queryClient.setQueryData(authKeys.user, null);
-      // Clear all queries
+      // Remove all queries from cache and stop refetching
       queryClient.clear();
-      // Redirect to landing page
-      router.push('/');
+      // Redirect to signin page
+      router.push('/signin');
+    },
+    onError: (error) => {
+      console.error('Logout error:', error);
+      // Even if logout fails, clear local data and redirect
+      queryClient.setQueryData(authKeys.user, null);
+      queryClient.clear();
+      router.push('/signin');
     },
   });
 }
@@ -115,5 +137,53 @@ export function useResetPassword() {
       // Redirect to sign in
       router.push('/signin?reset=success');
     },
+  });
+}
+
+// Get full user profile with organizations and permissions
+export function useProfile() {
+  const hasToken = typeof window !== 'undefined' && (
+    localStorage.getItem('accessToken') !== null ||
+    document.cookie.includes('auth_token=')
+  );
+
+  return useQuery({
+    queryKey: ['profile'],
+    queryFn: authApi.getProfile,
+    enabled: hasToken,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+}
+
+// Update user profile
+export function useUpdateProfile() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (data: UpdateProfileRequest) => authApi.updateProfile(data),
+    onSuccess: (updatedUser) => {
+      // Update user in cache
+      queryClient.setQueryData(authKeys.user, updatedUser);
+      
+      // Update profile data in cache
+      queryClient.setQueryData(['profile'], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          user: updatedUser,
+        };
+      });
+      
+      // Invalidate to refetch fresh data
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      queryClient.invalidateQueries({ queryKey: authKeys.user });
+    },
+  });
+}
+
+// Change password
+export function useChangePassword() {
+  return useMutation({
+    mutationFn: (data: ChangePasswordRequest) => authApi.changePassword(data),
   });
 }

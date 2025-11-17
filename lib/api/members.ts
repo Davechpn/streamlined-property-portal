@@ -5,18 +5,25 @@ import type {
   UpdateMemberRoleRequest,
 } from '@/lib/types';
 
-interface ApiResponse<T> {
-  data: T;
-  message?: string;
+interface MembersResponse {
+  success: boolean;
+  message: string;
+  members: OrganizationMemberWithUser[];
+  errors: any[];
 }
 
 // Get all members for an organization
 export async function getMembers(orgId: string): Promise<OrganizationMemberWithUser[]> {
   try {
-    const response = await apiClient.get<ApiResponse<OrganizationMemberWithUser[]>>(
+    const response = await apiClient.get<MembersResponse>(
       `/organizations/${orgId}/members`
     );
-    return response.data.data;
+    // Normalize role to lowercase
+    const members = response.data.members.map(member => ({
+      ...member,
+      role: member.role.toLowerCase() as any
+    }));
+    return members;
   } catch (error) {
     Sentry.captureException(error, {
       tags: { api_action: 'get_members', org_id: orgId },
@@ -32,7 +39,7 @@ export async function updateMemberRole(
   data: UpdateMemberRoleRequest
 ): Promise<OrganizationMemberWithUser> {
   try {
-    const response = await apiClient.patch<ApiResponse<OrganizationMemberWithUser>>(
+    const response = await apiClient.patch<{ success: boolean; member: OrganizationMemberWithUser; message: string }>(
       `/organizations/${orgId}/members/${memberId}/role`,
       data
     );
@@ -41,7 +48,12 @@ export async function updateMemberRole(
       message: 'Member role updated',
       data: { org_id: orgId, member_id: memberId, role: data.role },
     });
-    return response.data.data;
+    // Normalize role to lowercase
+    const member = {
+      ...response.data.member,
+      role: response.data.member.role.toLowerCase() as any
+    };
+    return member;
   } catch (error) {
     Sentry.captureException(error, {
       tags: { api_action: 'update_member_role', org_id: orgId, member_id: memberId },

@@ -1,83 +1,63 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import * as invitationApi from '@/lib/api/invitations';
-import type { InviteMemberRequest } from '@/lib/types';
 
 // Query keys
 export const invitationKeys = {
-  all: (orgId: string) => ['invitations', orgId] as const,
+  user: ['user-invitations'] as const,
+  org: (orgId: string) => ['org-invitations', orgId] as const,
 };
 
-// Get all invitations for an organization
-export function useInvitations(orgId: string) {
+// Get all invitations for current user (sent and received)
+export function useUserInvitations() {
   return useQuery({
-    queryKey: invitationKeys.all(orgId),
-    queryFn: () => invitationApi.getInvitations(orgId),
+    queryKey: invitationKeys.user,
+    queryFn: invitationApi.getUserInvitations,
+  });
+}
+
+// Get invitations for a specific organization
+export function useOrganizationInvitations(orgId: string) {
+  return useQuery({
+    queryKey: invitationKeys.org(orgId),
+    queryFn: () => invitationApi.getOrganizationInvitations(orgId),
     enabled: !!orgId,
   });
 }
 
-// Create invitation mutation
-export function useCreateInvitation(orgId: string) {
+// Send invitation mutation
+export function useSendInvitation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (data: InviteMemberRequest) =>
-      invitationApi.createInvitation(orgId, data),
+    mutationFn: invitationApi.sendInvitation,
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: invitationKeys.all(orgId) });
-    },
-  });
-}
-
-// Resend invitation mutation
-export function useResendInvitation(orgId: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (invitationId: string) =>
-      invitationApi.resendInvitation(orgId, invitationId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: invitationKeys.all(orgId) });
-    },
-  });
-}
-
-// Cancel invitation mutation
-export function useCancelInvitation(orgId: string) {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (invitationId: string) =>
-      invitationApi.cancelInvitation(orgId, invitationId),
-    onMutate: async (invitationId) => {
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({ queryKey: invitationKeys.all(orgId) });
-
-      // Snapshot previous value
-      const previousInvitations = queryClient.getQueryData(invitationKeys.all(orgId));
-
-      // Optimistically remove invitation
-      queryClient.setQueryData(invitationKeys.all(orgId), (old: any) =>
-        old?.filter((invitation: any) => invitation.id !== invitationId)
-      );
-
-      return { previousInvitations };
-    },
-    onError: (err, invitationId, context) => {
-      // Rollback on error
-      if (context?.previousInvitations) {
-        queryClient.setQueryData(invitationKeys.all(orgId), context.previousInvitations);
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: invitationKeys.all(orgId) });
+      queryClient.invalidateQueries({ queryKey: invitationKeys.user });
     },
   });
 }
 
 // Accept invitation mutation
 export function useAcceptInvitation() {
+  const queryClient = useQueryClient();
+
   return useMutation({
-    mutationFn: (token: string) => invitationApi.acceptInvitation(token),
+    mutationFn: ({ invitationId, token }: { invitationId: string; token: string }) =>
+      invitationApi.acceptInvitation(invitationId, token),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: invitationKeys.user });
+      queryClient.invalidateQueries({ queryKey: ['organizations'] });
+    },
+  });
+}
+
+// Cancel invitation mutation
+export function useCancelInvitation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: invitationApi.cancelInvitation,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: invitationKeys.user });
+    },
   });
 }

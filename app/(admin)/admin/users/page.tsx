@@ -83,16 +83,11 @@ export default function AdminUsersPage() {
     }
   }
 
-  const getStatusColor = (status: UserStatus) => {
-    switch (status) {
-      case "active":
-        return "bg-green-500/10 text-green-500 hover:bg-green-500/20"
-      case "inactive":
-        return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20"
-      case "suspended":
-        return "bg-red-500/10 text-red-500 hover:bg-red-500/20"
-      default:
-        return ""
+  const getStatusColor = (isActive: boolean) => {
+    if (isActive) {
+      return "bg-green-500/10 text-green-500 hover:bg-green-500/20"
+    } else {
+      return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20"
     }
   }
 
@@ -187,21 +182,21 @@ export default function AdminUsersPage() {
                         </div>
                       </TableCell>
                       <TableCell>
-                        <Badge className={getStatusColor(user.status)}>
-                          {user.status}
+                        <Badge className={getStatusColor(user.isActive)}>
+                          {user.isActive ? 'active' : 'inactive'}
                         </Badge>
                       </TableCell>
                       <TableCell>
                         {new Date(user.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
-                        {user.lastActive
-                          ? new Date(user.lastActive).toLocaleDateString()
+                        {user.lastActiveAt
+                          ? new Date(user.lastActiveAt).toLocaleDateString()
                           : "Never"}
                       </TableCell>
                       <TableCell className="text-right">
                         <Select
-                          value={user.status}
+                          value={user.isActive ? 'active' : 'inactive'}
                           onValueChange={(value) =>
                             handleStatusChange(user.id, user.name, value as UserStatus)
                           }

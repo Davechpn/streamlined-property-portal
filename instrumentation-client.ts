@@ -9,13 +9,15 @@ Sentry.init({
 
   // Add optional integrations for additional features
   integrations: [
-    Sentry.replayIntegration(),
+    // Disable replay in development to avoid extension conflicts
+    ...(process.env.NODE_ENV === 'production' ? [Sentry.replayIntegration()] : []),
   ],
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
+  tracesSampleRate: process.env.NODE_ENV === 'production' ? 1 : 0.1,
+  
   // Enable logs to be sent to Sentry
-  enableLogs: true,
+  enableLogs: process.env.NODE_ENV === 'production',
 
   // Define how likely Replay events are sampled.
   // This sets the sample rate to be 10%. You may want this to be 100% while
@@ -28,6 +30,24 @@ Sentry.init({
   // Enable sending user PII (Personally Identifiable Information)
   // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
   sendDefaultPii: true,
+  
+  // Filter out certain errors
+  beforeSend(event, hint) {
+    // Don't send errors after user has logged out
+    if (typeof window !== 'undefined' && !localStorage.getItem('accessToken')) {
+      // Check if error is related to authentication
+      const error = hint.originalException;
+      const errorMessage = error?.toString() || '';
+      if (errorMessage.includes('authentication') || 
+          errorMessage.includes('No authentication token') ||
+          event.request?.url?.includes('/organizations') ||
+          event.request?.url?.includes('/members') ||
+          event.request?.url?.includes('/admin')) {
+        return null; // Don't send to Sentry
+      }
+    }
+    return event;
+  },
 });
 
 export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;

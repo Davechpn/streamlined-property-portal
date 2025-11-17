@@ -1,142 +1,120 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AuthMethodSelector, type AuthMethod } from './AuthMethodSelector';
-import { EmailPasswordForm } from './EmailPasswordForm';
-import { PhoneOTPForm, OTPVerification, useOTPCountdown } from './PhoneOTPForm';
-import { GoogleAuthButton } from './GoogleAuthButton';
-import { useLogin, useRequestOTP, useVerifyOTP } from '@/lib/hooks/useAuth';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { useLogin } from '@/lib/hooks/useAuth';
 
 export function SignInForm() {
-  const [method, setMethod] = useState<AuthMethod>('email');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
-  const [otp, setOTP] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
-  const [otpRequested, setOTPRequested] = useState(false);
 
   const login = useLogin();
-  const requestOTP = useRequestOTP();
-  const verifyOTP = useVerifyOTP();
-  const { countdown, canResend, startCountdown } = useOTPCountdown();
 
-  const handleRequestOTP = async () => {
-    try {
-      await requestOTP.mutateAsync({ phoneNumber: phone });
-      setOTPRequested(true);
-      startCountdown();
-    } catch (error) {
-      // Error handled by mutation
+  useEffect(() => {
+    if (login.isSuccess) {
+      console.log('Login mutation succeeded');
     }
-  };
-
-  const handleResendOTP = async () => {
-    await handleRequestOTP();
-  };
+  }, [login.isSuccess]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    if (method === 'email') {
-      login.mutate({ method: 'email', email, password, rememberMe });
-    } else if (method === 'phone') {
-      if (!otpRequested) {
-        await handleRequestOTP();
-      } else {
-        verifyOTP.mutate({ phoneNumber: phone, code: otp });
-      }
-    }
-    // Google is handled by GoogleAuthButton
+    console.log('Submitting login form');
+    login.mutate({ email, password, rememberMe });
   };
 
-  const isLoading = login.isPending || requestOTP.isPending || verifyOTP.isPending;
-  const error = login.error || requestOTP.error || verifyOTP.error;
+  const isLoading = login.isPending;
+  const error = login.error;
+
+  // Extract rate limit info if available
+  const isRateLimited = error && (error as any).status === 429;
+  const retryAfter = isRateLimited ? (error as any).retryAfter : null;
 
   return (
-    <Card>
+    <Card className="w-full max-w-md mx-auto">
       <CardHeader>
         <CardTitle>Welcome back</CardTitle>
         <CardDescription>
-          Sign in to your Streamlined Portal account
+          Sign in to your Streamlined Property Portal account
         </CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Method Selector */}
-          <AuthMethodSelector selected={method} onSelect={setMethod} />
-
           {/* Error Alert */}
           {error && (
             <Alert variant="destructive">
               <AlertDescription>
                 {error instanceof Error ? error.message : 'An error occurred'}
+                {isRateLimited && retryAfter && (
+                  <div className="mt-2 text-sm">
+                    Please wait {retryAfter} seconds before trying again.
+                  </div>
+                )}
               </AlertDescription>
             </Alert>
           )}
 
-          {/* Email/Password Form */}
-          {method === 'email' && (
-            <EmailPasswordForm
-              email={email}
-              password={password}
-              onEmailChange={setEmail}
-              onPasswordChange={setPassword}
-              showRememberMe
-              rememberMe={rememberMe}
-              onRememberMeChange={setRememberMe}
+          {/* Email Field */}
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="user@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
             />
-          )}
+          </div>
 
-          {/* Phone/OTP Form */}
-          {method === 'phone' && !otpRequested && (
-            <PhoneOTPForm
-              phone={phone}
-              onPhoneChange={setPhone}
-              onRequestOTP={handleRequestOTP}
-              isRequestingOTP={requestOTP.isPending}
-              otpRequested={otpRequested}
+          {/* Password Field */}
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
             />
-          )}
+          </div>
 
-          {/* OTP Verification */}
-          {method === 'phone' && otpRequested && (
-            <OTPVerification
-              otp={otp}
-              onOTPChange={setOTP}
-              onResendOTP={handleResendOTP}
-              canResend={canResend}
-              countdown={countdown}
+          {/* Remember Me Checkbox */}
+          <div className="flex items-center space-x-2">
+            <input
+              id="rememberMe"
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+              className="h-4 w-4 rounded border-gray-300"
             />
-          )}
+            <Label htmlFor="rememberMe" className="text-sm font-normal cursor-pointer">
+              Remember me
+            </Label>
+          </div>
 
-          {/* Google OAuth */}
-          {method === 'google' && (
-            <GoogleAuthButton />
-          )}
+          {/* Forgot Password Link */}
+          <div className="flex justify-end">
+            <Link
+              href="/reset-password"
+              className="text-sm text-primary hover:underline"
+            >
+              Forgot password?
+            </Link>
+          </div>
 
-          {/* Forgot Password Link (Email only) */}
-          {method === 'email' && (
-            <div className="flex justify-end">
-              <Link
-                href="/reset-password"
-                className="text-sm text-primary hover:underline"
-              >
-                Forgot password?
-              </Link>
-            </div>
-          )}
-
-          {/* Submit Button (Email and Phone OTP) */}
-          {method !== 'google' && (
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing in...' : 'Sign In'}
-            </Button>
-          )}
+          {/* Submit Button */}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? 'Signing in...' : 'Sign In'}
+          </Button>
         </form>
       </CardContent>
       <CardFooter className="flex justify-center">

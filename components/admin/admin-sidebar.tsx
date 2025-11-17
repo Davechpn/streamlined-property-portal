@@ -31,8 +31,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useUser } from "@/lib/hooks/useAuth"
-import { logout } from "@/lib/api/auth"
+import { useUser, useLogout } from "@/lib/hooks/useAuth"
 import { useQueryClient } from "@tanstack/react-query"
 
 const adminNavItems = [
@@ -63,15 +62,10 @@ export function AdminSidebar() {
   const router = useRouter()
   const queryClient = useQueryClient()
   const { data: user } = useUser()
+  const logout = useLogout()
 
   const handleLogout = async () => {
-    try {
-      await logout()
-      queryClient.clear()
-      router.push("/signin")
-    } catch (error) {
-      console.error("Logout failed:", error)
-    }
+    await logout.mutateAsync()
   }
 
   const userInitials = user?.name
@@ -137,7 +131,7 @@ export function AdminSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+              <DropdownMenuTrigger asChild suppressHydrationWarning>
                 <SidebarMenuButton className="w-full">
                   <Avatar className="h-6 w-6">
                     <AvatarFallback className="text-xs">

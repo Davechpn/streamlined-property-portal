@@ -3,6 +3,7 @@ import * as orgApi from '@/lib/api/organizations';
 import type {
   CreateOrganizationRequest,
   UpdateOrganizationRequest,
+  Organization,
 } from '@/lib/types';
 
 // Query keys
@@ -86,15 +87,25 @@ export function useSwitchWorkspace() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (orgId: string) => orgApi.switchWorkspace(orgId),
-    onSuccess: async (_data, orgId) => {
-      // Get the organization data and set as current
-      const org = queryClient.getQueryData(organizationKeys.detail(orgId));
-      if (org) {
-        queryClient.setQueryData(organizationKeys.current, org);
+    mutationFn: async (orgId: string) => {
+      // Get the organization data from the list
+      const orgs = queryClient.getQueryData<Organization[]>(organizationKeys.all);
+      const org = orgs?.find(o => o.id === orgId);
+      
+      if (!org) {
+        throw new Error('Organization not found');
       }
       
-      // Invalidate related queries
+      // Store in localStorage for persistence
+      localStorage.setItem('currentOrganizationId', orgId);
+      
+      return org;
+    },
+    onSuccess: (org) => {
+      // Update the current organization in cache
+      queryClient.setQueryData(organizationKeys.current, org);
+      
+      // Invalidate related queries to refetch with new context
       queryClient.invalidateQueries({ queryKey: ['members'] });
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
     },
@@ -103,12 +114,33 @@ export function useSwitchWorkspace() {
 
 // Get current active organization
 export function useCurrentOrganization() {
+  const queryClient = useQueryClient();
+  
   return useQuery({
     queryKey: organizationKeys.current,
     queryFn: async () => {
-      // Get from cache or fetch first org
+      // First check if we have a stored organization ID
+      const storedOrgId = localStorage.getItem('currentOrganizationId');
+      
+      // Get all organizations
       const orgs = await orgApi.getOrganizations();
-      return orgs[0] || null;
+      
+      if (!orgs || orgs.length === 0) {
+        return null;
+      }
+      
+      // Try to find the stored organization
+      if (storedOrgId) {
+        const storedOrg = orgs.find(o => o.id === storedOrgId);
+        if (storedOrg) {
+          return storedOrg;
+        }
+      }
+      
+      // Fall back to first organization and store it
+      const firstOrg = orgs[0];
+      localStorage.setItem('currentOrganizationId', firstOrg.id);
+      return firstOrg;
     },
     staleTime: Infinity, // Don't refetch automatically
   });

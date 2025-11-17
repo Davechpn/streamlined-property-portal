@@ -2,7 +2,7 @@ import axios from 'axios';
 import * as Sentry from '@sentry/nextjs';
 
 const apiClient = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || 'https://streamlined-properties.com/api/v1',
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
@@ -12,8 +12,22 @@ const apiClient = axios.create({
 // Request interceptor - add auth token from cookie
 apiClient.interceptors.request.use(
   (config) => {
-    // Token will be automatically sent via httpOnly cookie
-    // No need to manually add Authorization header
+    // Get token from localStorage
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('accessToken');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      } else {
+        // If no token and trying to access protected routes, cancel the request
+        const protectedRoutes = ['/auth/profile', '/organizations', '/members', '/invitations', '/activities', '/admin'];
+        const isProtectedRoute = protectedRoutes.some(route => config.url?.includes(route));
+        
+        if (isProtectedRoute) {
+          console.log('Blocking API request to protected route without token:', config.url);
+          return Promise.reject(new Error('No authentication token available'));
+        }
+      }
+    }
     return config;
   },
   (error) => {

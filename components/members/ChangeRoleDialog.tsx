@@ -101,7 +101,7 @@ export function ChangeRoleDialog({
         <DialogHeader>
           <DialogTitle>Change Member Role</DialogTitle>
           <DialogDescription>
-            Update the role for {member.user.name}
+            Update the role for {member.name}
           </DialogDescription>
         </DialogHeader>
 

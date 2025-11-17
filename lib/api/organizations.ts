@@ -12,11 +12,23 @@ interface ApiResponse<T> {
   message?: string;
 }
 
+interface OrganizationsListResponse {
+  success: boolean;
+  message: string;
+  organizations: Organization[];
+  errors: any[];
+}
+
 // Get all organizations for current user
 export async function getOrganizations(): Promise<Organization[]> {
   try {
-    const response = await apiClient.get<ApiResponse<Organization[]>>('/organizations');
-    return response.data.data;
+    const response = await apiClient.get<OrganizationsListResponse>('/organizations');
+    // Normalize userRole to lowercase
+    const organizations = response.data.organizations.map(org => ({
+      ...org,
+      userRole: org.userRole?.toLowerCase() as any
+    }));
+    return organizations;
   } catch (error) {
     Sentry.captureException(error, {
       tags: { api_action: 'get_organizations' },
@@ -28,8 +40,24 @@ export async function getOrganizations(): Promise<Organization[]> {
 // Get single organization details
 export async function getOrganization(id: string): Promise<OrganizationDetailResponse> {
   try {
-    const response = await apiClient.get<ApiResponse<OrganizationDetailResponse>>(`/organizations/${id}`);
-    return response.data.data;
+    const response = await apiClient.get<Organization>(`/organizations/${id}`);
+    
+    // API returns organization data directly, not wrapped
+    const orgData = response.data;
+    
+    // Normalize role to lowercase to match Role type
+    const userRole = orgData.userRole?.toLowerCase() as any;
+    
+    return {
+      organization: {
+        ...orgData,
+        userRole
+      },
+      members: [],
+      pendingInvitations: [],
+      userRole,
+      permissions: {} as any,
+    };
   } catch (error) {
     Sentry.captureException(error, {
       tags: { api_action: 'get_organization', org_id: id },
@@ -41,13 +69,13 @@ export async function getOrganization(id: string): Promise<OrganizationDetailRes
 // Create new organization
 export async function createOrganization(data: CreateOrganizationRequest): Promise<Organization> {
   try {
-    const response = await apiClient.post<ApiResponse<Organization>>('/organizations', data);
+    const response = await apiClient.post<{ success: boolean; organization: Organization; message: string }>('/organizations', data);
     Sentry.addBreadcrumb({
       category: 'organization',
       message: 'Organization created',
       data: { name: data.name },
     });
-    return response.data.data;
+    return response.data.organization;
   } catch (error) {
     Sentry.captureException(error, {
       tags: { api_action: 'create_organization' },
@@ -59,33 +87,20 @@ export async function createOrganization(data: CreateOrganizationRequest): Promi
 // Update organization
 export async function updateOrganization(id: string, data: UpdateOrganizationRequest): Promise<Organization> {
   try {
-    const response = await apiClient.patch<ApiResponse<Organization>>(`/organizations/${id}`, data);
+    // Use PUT method as per API specification
+    const response = await apiClient.put<Organization>(`/organizations/${id}`, data);
+    
     Sentry.addBreadcrumb({
       category: 'organization',
       message: 'Organization updated',
       data: { org_id: id },
     });
-    return response.data.data;
+    
+    // API returns organization data directly
+    return response.data;
   } catch (error) {
     Sentry.captureException(error, {
       tags: { api_action: 'update_organization', org_id: id },
-    });
-    throw error;
-  }
-}
-
-// Switch active workspace
-export async function switchWorkspace(orgId: string): Promise<void> {
-  try {
-    await apiClient.post(`/organizations/${orgId}/switch`);
-    Sentry.addBreadcrumb({
-      category: 'organization',
-      message: 'Workspace switched',
-      data: { org_id: orgId },
-    });
-  } catch (error) {
-    Sentry.captureException(error, {
-      tags: { api_action: 'switch_workspace', org_id: orgId },
     });
     throw error;
   }

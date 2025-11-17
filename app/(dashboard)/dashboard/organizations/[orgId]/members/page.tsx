@@ -4,6 +4,7 @@ import { useParams, useRouter } from "next/navigation"
 import { useMembers, useRemoveMember, useUpdateMemberRole } from "@/lib/hooks/useMembers"
 import { useUser } from "@/lib/hooks/useAuth"
 import { usePermissions } from "@/lib/hooks/usePermissions"
+import { useOrganization } from "@/lib/hooks/useOrganizations"
 import {
   Table,
   TableBody,
@@ -15,12 +16,13 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
-import { Card } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Trash2, Users, Edit } from "lucide-react"
+import { Trash2, Users, Edit, UserPlus, Mail, Crown, Shield, Building2 } from "lucide-react"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useState } from "react"
 import { ChangeRoleDialog } from "@/components/members/ChangeRoleDialog"
+import { SendInvitationDialog } from "@/components/invitations/SendInvitationDialog"
 import type { Role, OrganizationMemberWithUser } from "@/lib/types"
 
 function MembersSkeleton() {
@@ -41,7 +43,7 @@ function MembersSkeleton() {
   )
 }
 
-function EmptyState() {
+function EmptyState({ onInvite }: { onInvite: () => void }) {
   return (
     <Card className="border-dashed">
       <div className="flex flex-col items-center justify-center p-12 text-center">
@@ -49,9 +51,13 @@ function EmptyState() {
           <Users className="h-10 w-10 text-muted-foreground" />
         </div>
         <h3 className="text-lg font-semibold">No team members yet</h3>
-        <p className="text-sm text-muted-foreground mt-2">
-          Invite team members to collaborate on this organization
+        <p className="text-sm text-muted-foreground mt-2 mb-4">
+          Get started by inviting team members to collaborate on this organization
         </p>
+        <Button onClick={onInvite}>
+          <UserPlus className="h-4 w-4 mr-2" />
+          Invite Team Members
+        </Button>
       </div>
     </Card>
   )
@@ -70,12 +76,16 @@ export default function MembersPage() {
   const router = useRouter()
   const orgId = params?.orgId as string
   const { data: members, isLoading } = useMembers(orgId)
+  const { data: orgData, isLoading: orgLoading } = useOrganization(orgId)
   const { data: currentUser } = useUser()
   const removeMember = useRemoveMember(orgId)
   const permissions = usePermissions({ orgId })
   const [error, setError] = useState<string | null>(null)
   const [selectedMember, setSelectedMember] = useState<OrganizationMemberWithUser | null>(null)
   const [isRoleDialogOpen, setIsRoleDialogOpen] = useState(false)
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
+
+  const organization = orgData?.organization
 
   const handleRemove = async (memberId: string) => {
     if (!confirm("Are you sure you want to remove this member?")) return
@@ -97,13 +107,39 @@ export default function MembersPage() {
       .slice(0, 2)
   }
 
+  // Owner should always be able to invite members
+  const canInviteMembers = permissions.isOwner || permissions.canInviteMembers
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">Team Members</h2>
-        <p className="text-muted-foreground">
-          Manage team members and their roles
-        </p>
+      {/* Header with action buttons */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Team Members</h2>
+          <p className="text-muted-foreground mt-1">
+            {organization ? (
+              <>
+                {members && members.length > 0 ? (
+                  <>
+                    {members.length} {members.length === 1 ? 'member' : 'members'} in {organization.name}
+                  </>
+                ) : (
+                  `Manage your team and control access to ${organization.name}`
+                )}
+              </>
+            ) : (
+              'Manage your team and control access to your organization'
+            )}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          {canInviteMembers && (
+            <Button onClick={() => setIsInviteDialogOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />
+              Invite Members
+            </Button>
+          )}
+        </div>
       </div>
 
       {error && (
@@ -128,7 +164,7 @@ export default function MembersPage() {
             </TableHeader>
             <TableBody>
               {members.map((member) => {
-                const isCurrentUser = member.user.id === currentUser?.id
+                const isCurrentUser = member.userId === currentUser?.id
                 const isOwner = member.role === "owner"
 
                 return (
@@ -139,50 +175,84 @@ export default function MembersPage() {
                   >
                     <TableCell onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarFallback>
-                            {getInitials(member.user.name)}
+                        <Avatar className="h-10 w-10">
+                          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                            {getInitials(member.name)}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="font-medium">{member.user.name}</div>
+                        <div>
+                          <div className="font-medium flex items-center gap-2">
+                            {member.name}
+                            {isCurrentUser && (
+                              <Badge variant="outline" className="text-xs">You</Badge>
+                            )}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            @{member.userName}
+                          </div>
+                        </div>
                       </div>
                     </TableCell>
-                    <TableCell>{member.user.email}</TableCell>
                     <TableCell>
-                      <Badge className={roleColors[member.role]}>
+                      <div className="flex items-center gap-2">
+                        <Mail className="h-4 w-4 text-muted-foreground" />
+                        {member.email}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={roleColors[member.role]} variant="secondary">
+                        {isOwner && <Crown className="h-3 w-3 mr-1" />}
                         {member.role}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {new Date(member.joinedAt).toLocaleDateString()}
+                      <div className="text-sm">
+                        {new Date(member.joinedAt).toLocaleDateString('en-US', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric'
+                        })}
+                      </div>
                     </TableCell>
                     <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                       <div className="flex gap-2 justify-end">
-                        {!isOwner && permissions.canModifyMember(member.role) && (
-                          <>
-                            {permissions.canUpdateMemberRoles && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => {
-                                  setSelectedMember(member)
-                                  setIsRoleDialogOpen(true)
-                                }}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                            )}
-                            {!isCurrentUser && permissions.canRemoveMembers && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleRemove(member.id)}
-                                disabled={removeMember.isPending}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            )}
-                          </>
+                        {/* View/Edit button - visible to everyone */}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => router.push(`/dashboard/organizations/${orgId}/members/${member.id}`)}
+                          title="View details"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+
+                        {/* Change role button - only for those with permission */}
+                        {!isOwner && permissions.canModifyMember(member.role) && permissions.canUpdateMemberRoles && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedMember(member)
+                              setIsRoleDialogOpen(true)
+                            }}
+                            title="Change role"
+                          >
+                            <Shield className="h-4 w-4" />
+                          </Button>
+                        )}
+
+                        {/* Remove button - only for those with permission */}
+                        {!isOwner && !isCurrentUser && permissions.canModifyMember(member.role) && permissions.canRemoveMembers && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemove(member.id)}
+                            disabled={removeMember.isPending}
+                            title="Remove member"
+                            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         )}
                       </div>
                     </TableCell>
@@ -193,7 +263,7 @@ export default function MembersPage() {
           </Table>
         </Card>
       ) : (
-        <EmptyState />
+        <EmptyState onInvite={() => setIsInviteDialogOpen(true)} />
       )}
 
       {/* Change Role Dialog */}
@@ -205,6 +275,13 @@ export default function MembersPage() {
           onOpenChange={setIsRoleDialogOpen}
         />
       )}
+
+      {/* Send Invitation Dialog */}
+      <SendInvitationDialog
+        open={isInviteDialogOpen}
+        onOpenChange={setIsInviteDialogOpen}
+        defaultOrganizationId={orgId}
+      />
     </div>
   )
 }
