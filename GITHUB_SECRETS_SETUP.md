@@ -55,14 +55,6 @@ ICeI2WL85FgSATouTvv3AqAAAAF2NoaXB1bmRvZGF2aWRAZ21haWwuY29tAQIDBAUG
 
 ---
 
-### Secret 4: VPS_PROJECT_PATH
-**Name:** `VPS_PROJECT_PATH`  
-**Value:** `/var/www/streamlined-property-portal`
-
-This is where your project will be located on the VPS.
-
----
-
 ### Optional Secret: VPS_PORT
 **Name:** `VPS_PORT`  
 **Value:** `22` (default SSH port)  
@@ -76,7 +68,9 @@ After adding all secrets, you should see:
 - ✅ VPS_HOST
 - ✅ VPS_USERNAME  
 - ✅ VPS_SSH_KEY
-- ✅ VPS_PROJECT_PATH
+- ✅ VPS_PORT (optional)
+
+**Note:** The project path is now auto-detected and doesn't require a secret!
 
 ## Before First Deployment
 
@@ -92,11 +86,27 @@ sudo usermod -aG docker $USER
 
 ### 2. Clone Repository
 ```bash
+# Option 1: Clone to home directory (recommended)
+cd ~
+git clone https://github.com/Davechpn/streamlined-property-portal.git
+cd streamlined-property-portal
+
+# Option 2: Clone to /var/www (requires sudo)
 sudo mkdir -p /var/www/streamlined-property-portal
 sudo chown $USER:$USER /var/www/streamlined-property-portal
 cd /var/www/streamlined-property-portal
 git clone https://github.com/Davechpn/streamlined-property-portal.git .
+
+# Option 3: Clone to user home directory with explicit path
+mkdir -p /home/$USER/streamlined-property-portal
+cd /home/$USER/streamlined-property-portal
+git clone https://github.com/Davechpn/streamlined-property-portal.git .
 ```
+
+**Note:** The workflow will auto-detect your project in these locations:
+- `~/streamlined-property-portal`
+- `/var/www/streamlined-property-portal`
+- `/home/$USER/streamlined-property-portal`
 
 ### 3. Add SSH Public Key
 ```bash
