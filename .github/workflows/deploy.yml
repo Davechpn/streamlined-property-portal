@@ -36,6 +36,7 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
+          command_timeout: 30m
           script: |
             # Define project directory
             PROJECT_DIR=~/streamlined-property-portal
@@ -57,17 +58,24 @@ jobs:
             # Stop and remove old containers
             docker compose down
             
-            # Build new image
-            docker compose build --no-cache
+            # Build new image (using cache for faster builds)
+            echo "🔨 Building Docker image..."
+            docker compose build
             
             # Start containers in detached mode
+            echo "🚀 Starting containers..."
             docker compose up -d
+            
+            # Wait for container to be healthy
+            echo "⏳ Waiting for container to start..."
+            sleep 10
             
             # Show container status
             docker compose ps
             
             # Show recent logs
-            docker compose logs --tail=50
+            echo "📋 Recent logs:"
+            docker compose logs --tail=30
 
       - name: Verify deployment
         uses: appleboy/ssh-action@v1.0.3
