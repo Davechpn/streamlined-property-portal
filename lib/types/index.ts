@@ -54,6 +54,7 @@ export interface Organization {
   createdAt: string;
   updatedAt: string;
   isActive: boolean;
+  status?: OrganizationStatus; // For admin views
   userRole?: Role;
   joinedAt?: string;
   memberCount?: number;

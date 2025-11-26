@@ -32,7 +32,12 @@ export function ResetPasswordForm() {
       return; // Show error
     }
     if (token) {
-      resetPassword.mutate({ token, newPassword });
+      resetPassword.mutate({ 
+        resetToken: token, 
+        password: newPassword,
+        confirmPassword: confirmPassword,
+        email: '', // Will be validated by token on backend
+      });
     }
   };
 

@@ -82,7 +82,9 @@ export default function AdminOrganizationsPage() {
     }
   }
 
-  const getStatusColor = (status: OrganizationStatus) => {
+  const getStatusColor = (status?: OrganizationStatus) => {
+    if (!status) return "bg-gray-500/10 text-gray-500 hover:bg-gray-500/20"
+    
     switch (status) {
       case "active":
         return "bg-green-500/10 text-green-500 hover:bg-green-500/20"
@@ -147,7 +149,7 @@ export default function AdminOrganizationsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Organization</TableHead>
-                  <TableHead>Owner</TableHead>
+                  {/* <TableHead>Owner</TableHead> */}
                   <TableHead>Members</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Created</TableHead>
@@ -168,15 +170,15 @@ export default function AdminOrganizationsPage() {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>
+                    {/* <TableCell>
                       <p className="text-sm">{org.ownerId}</p>
-                    </TableCell>
+                    </TableCell> */}
                     <TableCell>
                       <span className="text-sm">-</span>
                     </TableCell>
                     <TableCell>
                       <Badge className={getStatusColor(org.status)}>
-                        {org.status}
+                        {org.status || 'unknown'}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -192,7 +194,7 @@ export default function AdminOrganizationsPage() {
                           View
                         </Button>
                         <Select
-                          value={org.status}
+                          value={org.status || 'active'}
                           onValueChange={(value) =>
                             handleStatusChange(org.id, org.name, value as OrganizationStatus)
                           }

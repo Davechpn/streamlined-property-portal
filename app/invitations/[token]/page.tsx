@@ -35,7 +35,7 @@ export default function AcceptInvitationPage() {
     setError(null)
 
     try {
-      await acceptInvitation.mutateAsync(token)
+      await acceptInvitation.mutateAsync({ token })
       setStatus("success")
       
       // Redirect to dashboard after 2 seconds

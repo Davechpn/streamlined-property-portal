@@ -41,8 +41,8 @@ export function useAcceptInvitation() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ invitationId, token }: { invitationId: string; token: string }) =>
-      invitationApi.acceptInvitation(invitationId, token),
+    mutationFn: ({ invitationId, token }: { invitationId?: string; token: string }) =>
+      invitationApi.acceptInvitation(invitationId || '', token),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: invitationKeys.user });
       queryClient.invalidateQueries({ queryKey: ['organizations'] });
