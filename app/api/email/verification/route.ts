@@ -6,13 +6,19 @@ export async function GET(request: NextRequest) {
   try {
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
-    const userFirstname = searchParams.get('userFirstname');
+    const email = searchParams.get('email');
+    const userName = searchParams.get('userName');
+    const userId = searchParams.get('userId');
+    const token = searchParams.get('token');
     const verificationUrl = searchParams.get('verificationUrl');
 
     // Render the email template to HTML
     const html = await render(
       VerificationEmail({
-        userFirstname: userFirstname || undefined,
+        email: email || undefined,
+        userName: userName || undefined,
+        userId: userId || undefined,
+        token: token || undefined,
         verificationUrl: verificationUrl || undefined,
       })
     );
@@ -40,7 +46,10 @@ export async function POST(request: NextRequest) {
     // Render the email template to HTML
     const html = await render(
       VerificationEmail({
-        userFirstname: body.userFirstname,
+        email: body.email,
+        userName: body.userName,
+        userId: body.userId,
+        token: body.token,
         verificationUrl: body.verificationUrl,
       })
     );
