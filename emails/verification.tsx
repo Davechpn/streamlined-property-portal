@@ -10,7 +10,6 @@ import {
   Preview,
   Section,
   Text,
-  Tailwind,
 } from '@react-email/components';
 import * as React from 'react';
 
@@ -22,68 +21,138 @@ interface VerificationEmailProps {
 export const VerificationEmail = ({
   userFirstname = 'there',
   verificationUrl = 'https://example.com/verify?token=abc123',
-}: VerificationEmailProps) => {
-  return (
-    <Html>
-      <Head />
-      <Preview>Verify your email address</Preview>
-      <Tailwind>
-        <Body className="bg-gray-100 font-sans">
-          <Container className="mx-auto py-8 px-4 max-w-xl">
-            <Section className="bg-white rounded-lg shadow-lg p-8">
-              <Heading className="text-2xl font-bold text-gray-900 mb-4">
-                Verify Your Email Address
-              </Heading>
-              
-              <Text className="text-gray-700 text-base mb-4">
-                Hi {userFirstname},
-              </Text>
-              
-              <Text className="text-gray-700 text-base mb-4">
-                Thank you for signing up! To complete your registration and start using your account, 
-                please verify your email address by clicking the button below.
-              </Text>
+}: VerificationEmailProps) => (
+  <Html>
+    <Head />
+    <Preview>Verify your email address</Preview>
+    <Body style={main}>
+      <Container style={container}>
+        <Heading style={h1}>Verify Your Email Address</Heading>
+        
+        <Text style={text}>Hi {userFirstname},</Text>
+        
+        <Text style={text}>
+          Thank you for signing up! To complete your registration and start using your account, 
+          please verify your email address by clicking the button below.
+        </Text>
 
-              <Section className="text-center my-8">
-                <Button
-                  className="bg-blue-600 text-white font-semibold py-3 px-6 rounded-lg hover:bg-blue-700"
-                  href={verificationUrl}
-                >
-                  Verify Email Address
-                </Button>
-              </Section>
+        <Section style={buttonContainer}>
+          <Button style={button} href={verificationUrl}>
+            Verify Email Address
+          </Button>
+        </Section>
 
-              <Text className="text-gray-600 text-sm mb-4">
-                Or copy and paste this URL into your browser:
-              </Text>
-              
-              <Text className="text-blue-600 text-sm break-all mb-6">
-                <Link href={verificationUrl} className="text-blue-600 underline">
-                  {verificationUrl}
-                </Link>
-              </Text>
+        <Text style={textSmall}>
+          Or copy and paste this URL into your browser:
+        </Text>
+        
+        <Text style={linkText}>
+          <Link href={verificationUrl} style={link}>
+            {verificationUrl}
+          </Link>
+        </Text>
 
-              <Hr className="border-gray-300 my-6" />
+        <Hr style={hr} />
 
-              <Text className="text-gray-600 text-sm mb-2">
-                This verification link will expire in 24 hours.
-              </Text>
+        <Text style={textSmall}>
+          This verification link will expire in 24 hours.
+        </Text>
 
-              <Text className="text-gray-600 text-sm">
-                If you didn't create an account, you can safely ignore this email.
-              </Text>
-            </Section>
+        <Text style={textSmall}>
+          If you didn't create an account, you can safely ignore this email.
+        </Text>
 
-            <Section className="text-center mt-8">
-              <Text className="text-gray-500 text-xs">
-                © {new Date().getFullYear()} Streamlined Property Portal. All rights reserved.
-              </Text>
-            </Section>
-          </Container>
-        </Body>
-      </Tailwind>
-    </Html>
-  );
+        <Text style={footer}>
+          © {new Date().getFullYear()} Streamlined Property Portal. All rights reserved.
+        </Text>
+      </Container>
+    </Body>
+  </Html>
+);
+
+const main = {
+  backgroundColor: '#f6f9fc',
+  fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Ubuntu,sans-serif',
+};
+
+const container = {
+  backgroundColor: '#ffffff',
+  margin: '0 auto',
+  padding: '20px 0 48px',
+  marginBottom: '64px',
+  maxWidth: '600px',
+};
+
+const h1 = {
+  color: '#1f2937',
+  fontSize: '24px',
+  fontWeight: 'bold',
+  margin: '40px 0',
+  padding: '0 48px',
+};
+
+const text = {
+  color: '#374151',
+  fontSize: '16px',
+  lineHeight: '24px',
+  margin: '16px 0',
+  padding: '0 48px',
+};
+
+const textSmall = {
+  color: '#6b7280',
+  fontSize: '14px',
+  lineHeight: '20px',
+  margin: '16px 0',
+  padding: '0 48px',
+};
+
+const linkText = {
+  color: '#2563eb',
+  fontSize: '14px',
+  lineHeight: '20px',
+  margin: '16px 0',
+  padding: '0 48px',
+  wordBreak: 'break-all' as const,
+};
+
+const link = {
+  color: '#2563eb',
+  textDecoration: 'underline',
+};
+
+const buttonContainer = {
+  padding: '27px 48px',
+  textAlign: 'center' as const,
+};
+
+const button = {
+  backgroundColor: '#2563eb',
+  borderRadius: '5px',
+  color: '#fff',
+  fontSize: '16px',
+  fontWeight: 'bold',
+  textDecoration: 'none',
+  textAlign: 'center' as const,
+  display: 'inline-block',
+  width: 'auto',
+  padding: '12px 24px',
+};
+
+const hr = {
+  borderColor: '#e5e7eb',
+  margin: '32px 0',
+  marginLeft: '48px',
+  marginRight: '48px',
+};
+
+const footer = {
+  color: '#9ca3af',
+  fontSize: '12px',
+  lineHeight: '16px',
+  margin: '32px 0',
+  padding: '0 48px',
+  textAlign: 'center' as const,
 };
 
 export default VerificationEmail;
