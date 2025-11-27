@@ -14,61 +14,73 @@ import {
 import * as React from 'react';
 
 interface VerificationEmailProps {
-  userFirstname?: string;
+  email?: string;
+  userName?: string;
+  userId?: string;
+  token?: string;
   verificationUrl?: string;
 }
 
 export const VerificationEmail = ({
-  userFirstname = 'there',
-  verificationUrl = 'https://example.com/verify?token=abc123',
-}: VerificationEmailProps) => (
-  <Html>
-    <Head />
-    <Preview>Verify your email address</Preview>
-    <Body style={main}>
-      <Container style={container}>
-        <Heading style={h1}>Verify Your Email Address</Heading>
-        
-        <Text style={text}>Hi {userFirstname},</Text>
-        
-        <Text style={text}>
-          Thank you for signing up! To complete your registration and start using your account, 
-          please verify your email address by clicking the button below.
-        </Text>
+  email,
+  userName = 'there',
+  userId,
+  token,
+  verificationUrl,
+}: VerificationEmailProps) => {
+  // Build verification URL if not provided
+  const finalVerificationUrl = verificationUrl || 
+    `https://streamlined-properties.com/verify?email=${encodeURIComponent(email || '')}&userName=${encodeURIComponent(userName)}&userId=${encodeURIComponent(userId || '')}&token=${encodeURIComponent(token || '')}`;
+  
+  return (
+    <Html>
+      <Head />
+      <Preview>Verify your email address</Preview>
+      <Body style={main}>
+        <Container style={container}>
+          <Heading style={h1}>Verify Your Email Address</Heading>
+          
+          <Text style={text}>Hi {userName},</Text>
+          
+          <Text style={text}>
+            Thank you for signing up! To complete your registration and start using your account, 
+            please verify your email address by clicking the button below.
+          </Text>
 
-        <Section style={buttonContainer}>
-          <Button style={button} href={verificationUrl}>
-            Verify Email Address
-          </Button>
-        </Section>
+          <Section style={buttonContainer}>
+            <Button style={button} href={finalVerificationUrl}>
+              Verify Email Address
+            </Button>
+          </Section>
 
-        <Text style={textSmall}>
-          Or copy and paste this URL into your browser:
-        </Text>
-        
-        <Text style={linkText}>
-          <Link href={verificationUrl} style={link}>
-            {verificationUrl}
-          </Link>
-        </Text>
+          <Text style={textSmall}>
+            Or copy and paste this URL into your browser:
+          </Text>
+          
+          <Text style={linkText}>
+            <Link href={finalVerificationUrl} style={link}>
+              {finalVerificationUrl}
+            </Link>
+          </Text>
 
-        <Hr style={hr} />
+          <Hr style={hr} />
 
-        <Text style={textSmall}>
-          This verification link will expire in 24 hours.
-        </Text>
+          <Text style={textSmall}>
+            This verification link will expire in 24 hours.
+          </Text>
 
-        <Text style={textSmall}>
-          If you didn't create an account, you can safely ignore this email.
-        </Text>
+          <Text style={textSmall}>
+            If you didn't create an account, you can safely ignore this email.
+          </Text>
 
-        <Text style={footer}>
-          © {new Date().getFullYear()} Streamlined Property Portal. All rights reserved.
-        </Text>
-      </Container>
-    </Body>
-  </Html>
-);
+          <Text style={footer}>
+            © {new Date().getFullYear()} Streamlined Property Portal. All rights reserved.
+          </Text>
+        </Container>
+      </Body>
+    </Html>
+  );
+};
 
 const main = {
   backgroundColor: '#f6f9fc',
