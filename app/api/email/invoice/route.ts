@@ -4,15 +4,6 @@ import { InvoiceEmail } from '@/emails/invoice';
 
 export async function GET(request: NextRequest) {
   try {
-    // Verify API key for security
-    const apiKey = request.headers.get('x-api-key');
-    if (!apiKey || apiKey !== process.env.EMAIL_API_KEY) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
     const tenantId = searchParams.get('tenantId');
@@ -69,15 +60,6 @@ export async function GET(request: NextRequest) {
 // POST endpoint for more complex data
 export async function POST(request: NextRequest) {
   try {
-    // Verify API key for security
-    const apiKey = request.headers.get('x-api-key');
-    if (!apiKey || apiKey !== process.env.EMAIL_API_KEY) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
-    }
-
     const body = await request.json();
     
     // Render the email template to HTML

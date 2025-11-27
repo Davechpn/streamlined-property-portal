@@ -36,25 +36,65 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
+          command_timeout: 30m
           script: |
-            cd ~/streamlined-property-portal || cd /var/www/streamlined-property-portal || cd /home/$USER/streamlined-property-portal
+            # Define project directory
+            PROJECT_DIR=~/streamlined-property-portal
             
-            # Pull latest code
-            git pull origin ${{ github.ref_name }}
+            # Clone repository if it doesn't exist
+            if [ ! -d "$PROJECT_DIR" ]; then
+              echo "📦 Cloning repository for the first time..."
+              git clone https://github.com/${{ github.repository }}.git $PROJECT_DIR
+              cd $PROJECT_DIR
+              git checkout ${{ github.ref_name }}
+            else
+              echo "📂 Repository exists, pulling latest changes..."
+              cd $PROJECT_DIR
+              git fetch origin
+              git checkout ${{ github.ref_name }}
+              git pull origin ${{ github.ref_name }}
+            fi
+            
+            # Check for .env.local file
+            if [ ! -f .env.local ]; then
+              echo "⚠️  WARNING: .env.local file not found!"
+              echo "📝 Creating a template .env.local file..."
+              cat > .env.local << 'EOF'
+            # Database Configuration
+            DATABASE_URL="postgresql://user:password@localhost:5432/dbname"
+            
+            # NextAuth Configuration
+            NEXTAUTH_SECRET="your-secret-key-here"
+            NEXTAUTH_URL="http://localhost:3007"
+            
+            # API Configuration
+            NEXT_PUBLIC_API_URL="http://localhost:3007"
+            
+            # Add your other environment variables here
+            EOF
+              echo "❗ IMPORTANT: Update .env.local with your actual values before the app will work!"
+            fi
             
             # Stop and remove old containers
             docker compose down
             
-            # Build new image
-            docker compose build --no-cache
+            # Build new image (using cache for faster builds)
+            echo "🔨 Building Docker image..."
+            docker compose build
             
             # Start containers in detached mode
+            echo "🚀 Starting containers..."
             docker compose up -d
+            
+            # Wait for container to be healthy
+            echo "⏳ Waiting for container to start..."
+            sleep 15
             
             # Show container status
             docker compose ps
             
             # Show recent logs
+            echo "📋 Recent logs:"
             docker compose logs --tail=50
 
       - name: Verify deployment
@@ -64,19 +104,47 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           port: ${{ secrets.VPS_PORT || 22 }}
+          command_timeout: 5m
           script: |
-            cd ~/streamlined-property-portal || cd /var/www/streamlined-property-portal || cd /home/$USER/streamlined-property-portal
+            cd ~/streamlined-property-portal
+            
+            echo "🔍 Checking deployment status..."
+            
+            # Show container status
+            docker compose ps
             
             # Check if container is running
-            if [ "$(docker compose ps -q streamlined-property-portal)" ]; then
+            CONTAINER_STATUS=$(docker compose ps -q streamlined-property-portal)
+            
+            if [ -n "$CONTAINER_STATUS" ]; then
               echo "✅ Container is running"
-              docker compose ps
               
-              # Check container health
-              docker inspect streamlined-property-portal --format='{{.State.Status}}'
+              # Get container state
+              STATE=$(docker inspect streamlined-property-portal --format='{{.State.Status}}' 2>/dev/null || echo "not found")
+              echo "Container state: $STATE"
+              
+              # Check if env file exists
+              if [ -f .env.local ]; then
+                echo "✅ .env.local file exists"
+              else
+                echo "⚠️  .env.local file is missing - app may not work correctly"
+              fi
+              
+              # Try to check health endpoint
+              echo "🏥 Checking health endpoint..."
+              sleep 5
+              curl -f http://localhost:3007/api/health || echo "⚠️  Health check failed - check logs"
+              
             else
               echo "❌ Container is not running"
+              echo "📋 Last 100 lines of logs:"
               docker compose logs --tail=100
+              
+              echo ""
+              echo "💡 Common issues:"
+              echo "   - Missing or invalid .env.local file"
+              echo "   - Port 3007 already in use"
+              echo "   - Docker build failed"
               exit 1
             fi
 

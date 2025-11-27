@@ -74,54 +74,45 @@ After adding all secrets, you should see:
 
 ## Before First Deployment
 
-⚠️ **Your VPS must be set up first!**
+⚠️ **Your VPS must have Docker installed!**
 
-Follow these steps on your VPS:
+### Quick VPS Preparation (Only Docker Required)
 
-### 1. Install Docker
 ```bash
+# SSH into your VPS
+ssh your-username@your-vps-ip
+
+# Install Docker
 curl -fsSL https://get.docker.com | sh
 sudo usermod -aG docker $USER
+newgrp docker
+
+# Verify Docker installation
+docker --version
+docker compose --version
+
+# Exit VPS
+exit
 ```
 
-### 2. Clone Repository
+That's it! The workflow will automatically:
+- ✅ Clone the repository on first deployment
+- ✅ Create the project directory
+- ✅ Pull updates on subsequent deployments
+- ✅ Build and run your Docker containers
+
+### Environment Variables
+
+After the first deployment, you'll need to add your `.env.local` file:
+
 ```bash
-# Option 1: Clone to home directory (recommended)
-cd ~
-git clone https://github.com/Davechpn/streamlined-property-portal.git
-cd streamlined-property-portal
+# SSH into your VPS
+ssh your-username@your-vps-ip
 
-# Option 2: Clone to /var/www (requires sudo)
-sudo mkdir -p /var/www/streamlined-property-portal
-sudo chown $USER:$USER /var/www/streamlined-property-portal
-cd /var/www/streamlined-property-portal
-git clone https://github.com/Davechpn/streamlined-property-portal.git .
+# Navigate to project
+cd ~/streamlined-property-portal
 
-# Option 3: Clone to user home directory with explicit path
-mkdir -p /home/$USER/streamlined-property-portal
-cd /home/$USER/streamlined-property-portal
-git clone https://github.com/Davechpn/streamlined-property-portal.git .
-```
-
-**Note:** The workflow will auto-detect your project in these locations:
-- `~/streamlined-property-portal`
-- `/var/www/streamlined-property-portal`
-- `/home/$USER/streamlined-property-portal`
-
-### 3. Add SSH Public Key
-```bash
-mkdir -p ~/.ssh
-echo "YOUR_PUBLIC_KEY_HERE" >> ~/.ssh/authorized_keys
-chmod 600 ~/.ssh/authorized_keys
-```
-
-Get your public key:
-```bash
-cat ~/.ssh/id_ed25519.pub
-```
-
-### 4. Create Environment File
-```bash
+# Create environment file
 nano .env.local
 ```
 
@@ -134,6 +125,8 @@ NEXTAUTH_URL=https://yourdomain.com
 NEXTAUTH_SECRET=your-super-secret-key
 # ... other variables
 ```
+
+Then trigger a redeploy to pick up the environment variables.
 
 ## Test Deployment
 

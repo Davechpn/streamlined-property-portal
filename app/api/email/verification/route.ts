@@ -1,23 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { render } from '@react-email/render';
-import { InvitationEmail } from '@/emails/invitation';
+import { VerificationEmail } from '@/emails/verification';
 
 export async function GET(request: NextRequest) {
   try {
     // Get query parameters
     const searchParams = request.nextUrl.searchParams;
-    const inviterName = searchParams.get('inviterName');
-    const organizationName = searchParams.get('organizationName');
-    const invitationUrl = searchParams.get('invitationUrl');
-    const role = searchParams.get('role');
+    const userFirstname = searchParams.get('userFirstname');
+    const verificationUrl = searchParams.get('verificationUrl');
 
     // Render the email template to HTML
     const html = await render(
-      InvitationEmail({
-        inviterName: inviterName || undefined,
-        organizationName: organizationName || undefined,
-        invitationUrl: invitationUrl || undefined,
-        role: role || undefined,
+      VerificationEmail({
+        userFirstname: userFirstname || undefined,
+        verificationUrl: verificationUrl || undefined,
       })
     );
 
@@ -29,7 +25,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error rendering invitation email:', error);
+    console.error('Error rendering verification email:', error);
     return NextResponse.json(
       { error: 'Failed to render email template' },
       { status: 500 }
@@ -43,11 +39,9 @@ export async function POST(request: NextRequest) {
     
     // Render the email template to HTML
     const html = await render(
-      InvitationEmail({
-        inviterName: body.inviterName,
-        organizationName: body.organizationName,
-        invitationUrl: body.invitationUrl,
-        role: body.role,
+      VerificationEmail({
+        userFirstname: body.userFirstname,
+        verificationUrl: body.verificationUrl,
       })
     );
 
@@ -59,7 +53,7 @@ export async function POST(request: NextRequest) {
       },
     });
   } catch (error) {
-    console.error('Error rendering invitation email:', error);
+    console.error('Error rendering verification email:', error);
     return NextResponse.json(
       { error: 'Failed to render email template' },
       { status: 500 }
