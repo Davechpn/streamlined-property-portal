@@ -1,5 +1,6 @@
 import { Building2, Users, Shield, BarChart3, Settings, Zap } from 'lucide-react';
 import { FeatureCard } from './FeatureCard';
+import { ShineBorder } from '@/components/ui/shine-border';
 
 export function Features() {
   const features = [
@@ -11,7 +12,7 @@ export function Features() {
     {
       icon: Users,
       title: 'Team Collaboration',
-      description: 'Invite team members, assign roles, and collaborate seamlessly with built-in permission controls.',
+      description: 'Invite team members, assign roles, and collaborate seamlessly with built-in permission controls in one place',
     },
     {
       icon: Shield,
@@ -36,7 +37,7 @@ export function Features() {
   ];
 
   return (
-    <section className="container px-4 py-16">
+    <section className=" px-4 py-16">
       <div className="mx-auto max-w-6xl space-y-12">
         {/* Section Header */}
         <div className="text-center">
@@ -51,12 +52,20 @@ export function Features() {
         {/* Features Grid */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {features.map((feature, index) => (
-            <FeatureCard
-              key={index}
-              icon={feature.icon}
-              title={feature.title}
-              description={feature.description}
-            />
+            <div key={index} className="relative rounded-lg">
+              <FeatureCard
+                icon={feature.icon}
+                title={feature.title}
+                description={feature.description}
+              />
+              <ShineBorder
+                borderWidth={1}
+                duration={12}
+                shineColor={["#7C3AED", "#06B6D4"]}
+                className="rounded-lg"
+                aria-hidden
+              />
+            </div>
           ))}
         </div>
       </div>
